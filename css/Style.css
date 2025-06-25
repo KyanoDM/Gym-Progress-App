@@ -1,0 +1,48 @@
+body {
+
+    overflow: hidden;
+}
+.hidden {
+    position: absolute !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+.form-container {
+    max-width: 400px;
+    width: 100%;
+}
+
+
+.bb{
+    position: absolute;
+    bottom: 0;
+    height: auto;
+    z-index: -1;
+}
+
+.sam {
+    transform: translateX(10%);
+    left: 50%;
+    width: 40%;
+}
+
+.cbum {
+    width: 50%;
+    transform: translateX(10%);
+}
+
+footer {
+    position: absolute;
+    bottom: 0;
+    left: 47%;
+}
+@media (max-width: 700px) {
+    .bb {
+        display: none;
+    }
+}
+.OrwEmail {
+    color: rgba(128, 128, 128, 0.685);
+}
