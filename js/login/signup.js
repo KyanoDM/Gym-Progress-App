@@ -26,41 +26,54 @@ document.addEventListener("DOMContentLoaded", () => {
                     const user = result.user;
                     const userRef = doc(db, "users", user.uid);
                     const userSnap = await getDoc(userRef);
+
                     const name = user.displayName;
                     const photoURL = user.photoURL;
                     const creationTime = user.metadata?.creationTime;
                     const email = user.email;
-                    
 
-                    // User exists, update last login
-                    await setDoc(userRef, {
-                        account: {
-                            name: name,
-                            email: email,
-                            createdAt: creationTime,
-                            lastLogin: new Date(),
-                            photoURL: photoURL,
-                            username: "Guest"
-                        },
-                        preferences: {
-                            weightUnit: "kg",
-                            measurementUnit: "cm"
-                        },
-                        onboarding: {
-                            usernameSet: false,
-                            unitsSet: false,
-                            onboardingComplete: false
-                        }
-                    }, { merge: true });
-                    const userData = userSnap.data();
-                    if (userData && userData.usernameSet) {
+                    if (!userSnap.exists()) {
+                        // New user → set default data
+                        await setDoc(userRef, {
+                            account: {
+                                name,
+                                email,
+                                createdAt: creationTime,
+                                lastLogin: new Date(),
+                                photoURL,
+                                username: "Guest"
+                            },
+                            preferences: {
+                                weightUnit: "kg",
+                                measurementUnit: "cm"
+                            },
+                            onboarding: {
+                                usernameSet: false,
+                                unitsSet: false,
+                                onboardingComplete: false
+                            }
+                        });
+                    } else {
+                        // Existing user → only update login time
+                        await setDoc(userRef, {
+                            account: {
+                                lastLogin: new Date()
+                            }
+                        }, { merge: true });
+                    }
+
+                    // Always re-fetch to get the latest data
+                    const updatedSnap = await getDoc(userRef);
+                    const userData = updatedSnap.data();
+
+                    if (userData?.onboarding?.onboardingComplete) {
                         window.location.href = "index.html";
                     } else {
                         window.location.href = "onboarding.html";
                     }
-                   
                 })
                 .catch(console.error);
+
         });
     }
 
@@ -76,7 +89,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const user = userCredential.user;
 
             // Update display name
-            await updateProfile(user, { displayName: name });
+            await updateProfile(user, {
+                displayName: name,
+                photoURL: "image/img.jpg"
+            });
+            
 
             // Store user in Firestore
             const userRef = doc(db, "users", user.uid);
@@ -103,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Fetch the user document to check usernameSet
             const userSnap = await getDoc(userRef);
             const userData = userSnap.data();
-            if (userData && userData.usernameSet) {
+            if (userData && userData.onboardingComplete) {
                 window.location.href = "index.html";
             } else {
                 window.location.href = "onboarding.html";
