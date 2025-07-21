@@ -26,12 +26,7 @@ const db = getFirestore(app);
 const urlParams = new URLSearchParams(window.location.search);
 const profileUid = urlParams.get("uid");
 
-function updateAvatars(user) {
-    document.querySelectorAll("#user-avatar").forEach(img => {
-        img.src = user.photoURL || "Image/img.jpg";
-        img.classList.remove("d-none");
-    });
-}
+
 
 async function fillProfile(currentUser) {
     const profilePic = document.querySelector("#profile-pic");
@@ -157,8 +152,8 @@ async function fillProfile(currentUser) {
     }
 
     if (profilePic) profilePic.src = photoURL;
-    if (userName) userName.textContent = `@${username}`;
-    if (userFullName) {
+    if (userFullName) userFullName.textContent = `@${name}`
+    if (userName) {
         let badges = "";
 
         if (viewedProfileAccount.isVerified) {
@@ -173,7 +168,7 @@ async function fillProfile(currentUser) {
             badges += ` <i class="bi bi-award-fill text-warning" title="Owner"></i>`;
         }
 
-        userName.innerHTML = `${name}${badges}`;
+        userName.innerHTML = `${username}${badges}`;
     }
 
     if (followerCountSpan) followerCountSpan.textContent = viewedProfileFollowerCount;
@@ -181,102 +176,13 @@ async function fillProfile(currentUser) {
     if (myFollowingCountDisplay) myFollowingCountDisplay.textContent = currentUserFollowingCount;
 }
 
-function setupLogout() {
-    const logoutBtn = document.querySelector("#logout-btn");
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => {
-            signOut(auth)
-                .then(() => window.location.href = "login.html")
-                .catch(err => console.error("Logout failed:", err));
-        });
-    }
-}
 
-function addEventListeners(profileBtns) {
-    profileBtns.forEach(btn => {
-        btn.addEventListener("click", () => {
-            window.location.href = "profile.html";
-        });
-    });
-}
 
-async function handleUserSearch(queryText) {
-    const resultsContainer = document.querySelector("#search-results");
-    if (!resultsContainer) return;
-
-    if (!queryText) {
-        resultsContainer.innerHTML = "";
-        return;
-    }
-
-    try {
-        const usersRef = collection(db, "users");
-        const q = query(
-            usersRef,
-            orderBy("account.username"),
-            startAt(queryText),
-            endAt(queryText + "\uf8ff")
-        );
-
-        const querySnapshot = await getDocs(q);
-        const users = [];
-
-        querySnapshot.forEach(doc => {
-            const data = doc.data();
-            users.push({
-                id: doc.id,
-                username: data.account?.username,
-                name: data.account?.name,
-                photoURL: data.account?.photoURL || "Image/img.jpg"
-            });
-        });
-
-        displaySearchResults(users);
-    } catch (error) {
-        console.error("Error fetching users:", error);
-    }
-}
-
-function displaySearchResults(users) {
-    const container = document.querySelector("#search-results");
-    if (!container) return;
-
-    container.innerHTML = "";
-
-    if (users.length === 0) {
-        container.innerHTML = `<div class="text-muted p-2">No users found.</div>`;
-        return;
-    }
-
-    users.forEach(user => {
-        const card = document.createElement("div");
-        card.className = "card mb-2 p-2 d-flex flex-row align-items-center gap-3";
-        card.style.cursor = "pointer";
-        card.innerHTML = `
-            <img src="${user.photoURL}" width="40" height="40" class="rounded-circle border">
-            <div>
-                <strong>@${user.username}</strong><br>
-                <span class="text-muted">${user.name}</span>
-            </div>
-        `;
-        card.addEventListener("click", () => {
-            window.location.href = `profile.html?uid=${user.id}`;
-        });
-        container.appendChild(card);
-    });
-}
 
 document.addEventListener("DOMContentLoaded", () => {
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            updateAvatars(user);
             fillProfile(user);
-            setupLogout();
-            addEventListeners(document.querySelectorAll("#ProfileBtn"));
-            const searchInput = document.querySelector("#search-input");
-            if (searchInput) {
-                searchInput.addEventListener("input", () => handleUserSearch(searchInput.value.trim().toLowerCase()));
-            }
         } else {
             window.location.href = "login.html";
         }
