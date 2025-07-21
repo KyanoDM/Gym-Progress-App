@@ -31,17 +31,13 @@ function setupNavigation() {
     onAuthStateChanged(auth, async (user) => {
         if (!user) return;
 
-        // Avatar
+        // Avatar - handled by the main skeleton loading function below
         avatarImgs.forEach(img => {
             img.src = user.photoURL || "Image/img.jpg";
             img.classList.remove("d-none");
         });
 
-        // Profile stats
-        const userSnap = await getDoc(doc(db, "users", user.uid));
-        const account = userSnap.data()?.account || {};
-        if (followerCountSpan) followerCountSpan.textContent = account.followerCount || 0;
-        if (followingCountSpan) followingCountSpan.textContent = account.followingCount || 0;
+        // Profile stats - handled by the main skeleton loading function below
     });
 
     // Profile buttons
@@ -148,3 +144,72 @@ function displaySearchResults(users) {
         container.appendChild(card);
     });
 }
+
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
+
+    // Get wrappers and images by new IDs
+    const navAvatarWrapper = document.getElementById("nav-avatar-wrapper");
+    const navAvatarImg = document.getElementById("nav-user-avatar");
+
+    const sidebarAvatarWrapper = document.getElementById("sidebar-avatar-wrapper");
+    const sidebarAvatarImg = document.getElementById("sidebar-user-avatar");
+
+    const followerCountSpan = document.querySelector("#sidebar-followers");
+    const followingCountSpan = document.querySelector("#sidebar-following");
+    const monthsCountSpan = document.querySelector("#sidebar-months");
+    const monthsWrapper = document.querySelector("#sidebar-months-wrapper");
+
+    // Hide images initially (to show skeletons)
+    navAvatarImg.style.display = "none";
+    sidebarAvatarImg.style.display = "none";
+
+    // Load nav avatar and on load show image + remove skeleton wrapper classes
+    navAvatarImg.onload = () => {
+        navAvatarImg.style.display = "block";
+        navAvatarWrapper.classList.remove("skeleton", "skeleton-circle", "skeleton-avatar-sm");
+    };
+    navAvatarImg.src = user.photoURL || "Image/img.jpg";
+
+    // Load sidebar avatar and on load show image + remove skeleton wrapper classes
+    sidebarAvatarImg.onload = () => {
+        sidebarAvatarImg.style.display = "block";
+        sidebarAvatarWrapper.classList.remove("skeleton", "skeleton-circle", "skeleton-avatar-lg");
+    };
+    sidebarAvatarImg.src = user.photoURL || "Image/img.jpg";
+
+    // For followers/following counts — skeleton classes already applied in HTML
+    // No need to add skeleton classes, just clear content while loading
+    if (followerCountSpan) {
+        followerCountSpan.textContent = ""; // clear text while loading
+    }
+    if (followingCountSpan) {
+        followingCountSpan.textContent = "";
+    }
+
+    // Fetch user data from Firestore
+    const userSnap = await getDoc(doc(db, "users", user.uid));
+    const account = userSnap.data()?.account || {};
+
+    // Update counts and remove skeleton once loaded
+    if (followerCountSpan) {
+        followerCountSpan.textContent = account.followerCount || 0;
+        followerCountSpan.classList.remove("skeleton", "skeleton-text");
+    }
+    if (followingCountSpan) {
+        followingCountSpan.textContent = account.followingCount || 0;
+        followingCountSpan.classList.remove("skeleton", "skeleton-text");
+    }
+
+    // Handle months count (you can replace this with actual data loading logic)
+    if (monthsCountSpan && monthsWrapper) {
+        // For now, just remove skeleton after a short delay since we don't have months data
+        setTimeout(() => {
+            monthsCountSpan.style.display = "inline";
+            monthsCountSpan.textContent = "0"; // Replace with actual months data
+            monthsWrapper.classList.remove("skeleton", "skeleton-text");
+        }, 500);
+    }
+});
+

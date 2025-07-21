@@ -28,7 +28,14 @@ function initializeOnboarding() {
     const termsError = document.querySelector("#terms-error");
 
     termsCheckBox.addEventListener('change', () => updateSubmitButtonState(termsCheckBox, userNameInput, submitButton));
-    userNameInput.addEventListener('input', () => updateSubmitButtonState(termsCheckBox, userNameInput, submitButton));
+    userNameInput.addEventListener('input', (e) => {
+        // Convert to lowercase in real-time
+        const cursorPosition = e.target.selectionStart;
+        e.target.value = e.target.value.toLowerCase();
+        e.target.setSelectionRange(cursorPosition, cursorPosition);
+
+        updateSubmitButtonState(termsCheckBox, userNameInput, submitButton);
+    });
 
     submitButton.addEventListener('click', (event) => {
         event.preventDefault();
@@ -175,5 +182,5 @@ function nextOnboardingSection() {
         onboardingComplete();
     }
 
-    
+
 }

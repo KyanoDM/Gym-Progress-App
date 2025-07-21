@@ -1,6 +1,6 @@
 import { getAuth, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-storage.js";
-import { getFirestore, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-storage.js";
+import { getFirestore, doc, updateDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 document.addEventListener("DOMContentLoaded", () => {
     Initialize();
@@ -21,9 +21,67 @@ function Initialize() {
     setupChangePicture();
     setupProfileForm();
     loadCurrentUserData();
+    loadPfp();
+}
+
+function loadPfp() {
+    const profilePic = document.getElementById("settings-profile-avatar");
+    profilePic.onload = () => {
+        // Hide skeleton background by removing the class
+        document.getElementById("profile-pic-wrapper").classList.remove("skeleton-circle");
+        profilePic.classList.add("loaded");
+    };
+
+    // When loading new image:
+    profilePic.src = user.photoURL || "default-avatar.png";
+
 }
 
 let tempUploadedPhotoURL = null;  // Store uploaded image URL before save
+let msgElem;
+
+async function isUsernameTaken(username, currentUserId) {
+    const db = getFirestore();
+    try {
+        // Convert to lowercase to ensure consistent checking
+        const lowerUsername = username.toLowerCase();
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("account.username", "==", lowerUsername));
+        const querySnapshot = await getDocs(q);
+
+        // Check if any document exists with this username
+        // If it exists and it's not the current user's document, then it's taken
+        for (const doc of querySnapshot.docs) {
+            if (doc.id !== currentUserId) {
+                return true; // Username is taken by someone else
+            }
+        }
+        return false; // Username is available
+    } catch (error) {
+        console.error("Error checking username:", error);
+        throw error;
+    }
+}
+
+function validateUsername(username) {
+    // Convert to lowercase for validation
+    const lowerUsername = username.toLowerCase();
+
+    // Username validation rules
+    if (lowerUsername.length < 3) {
+        return "Username must be at least 3 characters long.";
+    }
+    if (lowerUsername.length > 20) {
+        return "Username must be no more than 20 characters long.";
+    }
+    if (!/^[a-z0-9_]+$/.test(lowerUsername)) {
+        return "Username can only contain lowercase letters, numbers, and underscores.";
+    }
+    if (/^[_0-9]/.test(lowerUsername)) {
+        return "Username cannot start with a number or underscore.";
+    }
+    return null; // Valid username
+}
 
 function loadCurrentUserData() {
     const auth = getAuth();
@@ -36,7 +94,6 @@ function loadCurrentUserData() {
                 img.src = user.photoURL || "Image/img.jpg";
             });
 
-            // Also update sidebar avatars (you have 2 elements with id 'user-avatar', fix: use querySelectorAll)
             document.querySelectorAll("#user-avatar").forEach(img => {
                 img.src = user.photoURL || "Image/img.jpg";
                 img.classList.remove("d-none");
@@ -46,25 +103,52 @@ function loadCurrentUserData() {
                 const userDocRef = doc(db, "users", user.uid);
                 const userDocSnap = await getDoc(userDocRef);
 
+                const nameInput = document.getElementById("profile-name");
+                const nameWrapper = document.getElementById("name-input-wrapper");
                 const usernameInput = document.getElementById("profile-username");
+                const usernameWrapper = document.getElementById("username-input-wrapper");
 
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data();
+
+                    // Load name
+                    if (userData.account?.name) {
+                        nameInput.value = userData.account.name;
+                    } else {
+                        nameInput.placeholder = user.displayName || "Enter your name";
+                    }
+
+                    // Load username
                     if (userData.account?.username) {
                         usernameInput.value = userData.account.username;
                     } else {
-                        usernameInput.placeholder = user.displayName || "Enter your username";
+                        usernameInput.placeholder = "Enter your username";
                     }
                 } else {
-                    usernameInput.placeholder = user.displayName || "Enter your username";
+                    nameInput.placeholder = user.displayName || "Enter your name";
+                    usernameInput.placeholder = "Enter your username";
                 }
+
+                // Show inputs and remove skeletons
+                nameInput.style.display = "block";
+                usernameInput.style.display = "block";
+                if (nameWrapper) {
+                    nameWrapper.classList.remove("skeleton", "skeleton-text");
+                }
+                if (usernameWrapper) {
+                    usernameWrapper.classList.remove("skeleton", "skeleton-text");
+                }
+
+                // Add event listener to convert username to lowercase as user types
+                usernameInput.addEventListener("input", (e) => {
+                    e.target.value = e.target.value.toLowerCase();
+                });
             } catch (error) {
                 console.error("Error loading user data:", error);
             }
         }
     });
 }
-
 
 function setupChangePicture() {
     const auth = getAuth();
@@ -74,8 +158,7 @@ function setupChangePicture() {
     const fileInput = document.getElementById("profile-pic-input");
     const profilePicImg = document.getElementById("settings-profile-avatar");
 
-    // Create a message element below the button to show upload status
-    let msgElem = document.createElement("div");
+    msgElem = document.createElement("div");
     msgElem.className = "text-muted small mt-1";
     changeBtn.insertAdjacentElement("afterend", msgElem);
 
@@ -93,8 +176,6 @@ function setupChangePicture() {
         const file = fileInput.files[0];
         if (!file) return;
 
-        // Optional: Validate file type and size here
-
         try {
             changeBtn.textContent = "Uploading...";
             changeBtn.disabled = true;
@@ -104,13 +185,11 @@ function setupChangePicture() {
 
             const downloadURL = await getDownloadURL(imageRef);
 
-            // Show preview immediately but do NOT update Firebase yet
             profilePicImg.src = downloadURL;
             document.querySelectorAll(".profile-pic").forEach(img => {
                 img.src = downloadURL;
             });
 
-            // Save URL temporarily; only update DB/auth on Save button press
             tempUploadedPhotoURL = downloadURL;
 
             msgElem.textContent = "Picture uploaded. Don't forget to click Save to apply changes.";
@@ -128,15 +207,16 @@ function setupChangePicture() {
 
 function setupProfileForm() {
     const auth = getAuth();
+    const storage = getStorage();
     const db = getFirestore();
 
     const form = document.getElementById("profile-settings-form");
+    const nameInput = document.getElementById("profile-name");
     const usernameInput = document.getElementById("profile-username");
     const changeBtn = document.getElementById("change-picture-btn");
 
-    // Create or reuse a centered message area below the form's Save button
     let formMsg = document.createElement("div");
-    formMsg.className = "text-muted small mt-2 text-center";  // centered text
+    formMsg.className = "text-muted small mt-2 text-center";
     form.querySelector("button[type='submit']").insertAdjacentElement("afterend", formMsg);
 
     form.addEventListener("submit", async (e) => {
@@ -154,14 +234,58 @@ function setupProfileForm() {
         try {
             const updates = {};
 
+            // Delete old photo if uploading new one
             if (tempUploadedPhotoURL) {
+                const oldPhotoURL = user.photoURL;
+                if (oldPhotoURL && !oldPhotoURL.includes("Image/img.jpg")) { // assuming this is default image URL
+                    try {
+                        const url = new URL(oldPhotoURL);
+                        const path = decodeURIComponent(url.pathname.split('/o/')[1].split('?')[0]);
+                        const oldPhotoRef = storageRef(storage, path);
+                        await deleteObject(oldPhotoRef);
+                        console.log("Old profile picture deleted");
+                    } catch (delError) {
+                        console.warn("Failed to delete old profile picture:", delError);
+                    }
+                }
                 await updateProfile(user, { photoURL: tempUploadedPhotoURL });
                 updates["account.photoURL"] = tempUploadedPhotoURL;
             }
 
-            const usernameVal = usernameInput.value.trim();
-            if (usernameVal.length > 0 && usernameVal !== user.displayName) {
-                await updateProfile(user, { displayName: usernameVal });
+            // Handle name update
+            const nameVal = nameInput.value.trim();
+            if (nameVal.length > 0) {
+                await updateProfile(user, { displayName: nameVal });
+                updates["account.name"] = nameVal;
+            }
+
+            // Handle username update
+            const usernameVal = usernameInput.value.trim().toLowerCase();
+            if (usernameVal.length > 0) {
+                // Validate username format
+                const validationError = validateUsername(usernameVal);
+                if (validationError) {
+                    formMsg.textContent = validationError;
+                    formMsg.className = "text-danger small mt-2 text-center";
+                    return;
+                }
+
+                // Check if username is already taken
+                try {
+                    const isTaken = await isUsernameTaken(usernameVal, user.uid);
+                    if (isTaken) {
+                        formMsg.textContent = "Username is already taken. Please choose a different one.";
+                        formMsg.className = "text-danger small mt-2 text-center";
+                        return;
+                    }
+                } catch (error) {
+                    console.error("Error checking username availability:", error);
+                    formMsg.textContent = "Error checking username availability. Please try again.";
+                    formMsg.className = "text-danger small mt-2 text-center";
+                    return;
+                }
+
+                await updateProfile(user, { displayName: nameVal });
                 updates["account.username"] = usernameVal;
             }
 
@@ -170,7 +294,6 @@ function setupProfileForm() {
                 await updateDoc(userDocRef, updates);
             }
 
-            // Update all profile pictures on the page after save
             const newPhotoURL = updates["account.photoURL"] || user.photoURL || "Image/img.jpg";
             document.querySelectorAll(".profile-pic").forEach(img => img.src = newPhotoURL);
             document.querySelectorAll("#user-avatar").forEach(img => {
@@ -178,12 +301,14 @@ function setupProfileForm() {
                 img.classList.remove("d-none");
             });
 
-            tempUploadedPhotoURL = null; // reset temp URL
+            tempUploadedPhotoURL = null;
             msgElem.textContent = "";
             formMsg.textContent = "Profile updated successfully!";
+            formMsg.className = "text-success small mt-2 text-center";
         } catch (error) {
             console.error("Error saving profile:", error);
             formMsg.textContent = "Failed to save profile.";
+            formMsg.className = "text-danger small mt-2 text-center";
         } finally {
             changeBtn.disabled = false;
         }

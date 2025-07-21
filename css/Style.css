@@ -2,6 +2,7 @@ body {
 
     overflow: hidden;
 }
+
 .hidden {
     position: absolute !important;
     visibility: hidden !important;
@@ -15,7 +16,7 @@ body {
 }
 
 
-.bb{
+.bb {
     position: absolute;
     bottom: 0;
     height: auto;
@@ -38,24 +39,151 @@ footer {
     bottom: 0;
     left: 47%;
 }
+
 @media (max-width: 700px) {
     .bb {
         display: none;
     }
 }
+
 .OrwEmail {
     color: rgba(128, 128, 128, 0.685);
 }
 
 #side-nav .nav-link {
-color: rgb(95, 95, 95);
-font-weight: 500;
+    color: rgb(95, 95, 95);
+    font-weight: 500;
 }
+
 #side-nav .active {
     color: rgb(32, 32, 235);
 }
 
 #search-input {
     width: 100%;
-        box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+
+
+
+
+
+
+
+
+
+/* Base skeleton class */
+.skeleton {
+    background: linear-gradient(90deg,
+            #eee 25%,
+            #ddd 37%,
+            #eee 63%);
+    background-size: 400% 100%;
+    animation: shimmer 3.4s ease infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(90deg,
+            #eee 25%,
+            #ddd 37%,
+            #eee 63%);
+    background-size: 400% 100%;
+    animation: shimmer 3.4s ease infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+/* shimmer keyframes */
+@keyframes shimmer {
+    0% {
+        background-position: -400% 0;
+    }
+
+    100% {
+        background-position: 400% 0;
+    }
+}
+
+/* hide image until loaded */
+img.profile-pic {
+    display: none;
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+}
+
+/* show image once loaded */
+img.profile-pic.loaded {
+    display: block;
+}
+
+/* Circle skeleton for avatars */
+.skeleton-circle {
+    border-radius: 50%;
+}
+
+/* Sizes for sidebar avatars and nav avatars */
+.skeleton-avatar-sm {
+    width: 40px;
+    height: 40px;
+}
+
+.skeleton-avatar-lg {
+    width: 60px;
+    height: 60px;
+}
+
+.skeleton-avatar-xl {
+    width: 160px;
+    height: 160px;
+}
+
+/* Skeleton for follower/following count text */
+.skeleton-text {
+    width: 40px;
+    height: 20px;
+    background: linear-gradient(90deg,
+            #eee 25%,
+            #ddd 37%,
+            #eee 63%);
+    background-size: 400% 100%;
+    animation: shimmer 3.4s ease infinite;
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+    color: transparent !important;
+}
+
+/* When skeleton is removed, restore normal text appearance */
+h4:not(.skeleton),
+p:not(.skeleton),
+span:not(.skeleton) {
+    color: inherit !important;
+    background: none !important;
+    animation: none !important;
+}
+
+/* Additional skeleton text sizes */
+.skeleton-text-sm {
+    width: 60px;
+    height: 16px;
+    border-radius: 3px;
+}
+
+.skeleton-text-md {
+    width: 120px;
+    height: 20px;
+    border-radius: 4px;
+}
+
+.skeleton-text-lg {
+    width: 180px;
+    height: 24px;
+    border-radius: 4px;
 }

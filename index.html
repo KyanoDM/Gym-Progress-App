@@ -21,8 +21,10 @@
             <div class="d-flex">
                 <div class="dropdown">
                     <a href="#" role="button" id="avatarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <img id="user-avatar" src="" alt="User avatar" class="rounded-circle ms-3 d-none" width="40"
-                            height="40" style="cursor: pointer;" />
+                        <div id="nav-avatar-wrapper" class="skeleton skeleton-circle skeleton-avatar-sm">
+                            <img id="nav-user-avatar" src="" alt="User avatar" class="rounded-circle ms-3" width="40"
+                                height="40" style="cursor: pointer; display: none;" />
+                        </div>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="avatarDropdown">
                         <li><a class="dropdown-item" id="ProfileBtn"><i class="bi bi-person-circle me-2"></i>My
@@ -46,7 +48,8 @@
                 <!-- User Search -->
                 <div class="p-3">
                     <div class="input-group">
-                        <input type="text" id="search-input" class="form-control" placeholder="Search users..." autocomplete="off"/>
+                        <input type="text" id="search-input" class="form-control" placeholder="Search users..."
+                            autocomplete="off" />
                         <div id="search-results" class="mt-2"></div>
 
                     </div>
@@ -74,18 +77,26 @@
             <div class="p-3 mb-5">
                 <div class="card text-center">
                     <div class="card-body">
-                        <img id="user-avatar" src="" alt="User avatar" class="rounded-circle mb-2" width="60"
-                            height="60" />
+                        <div id="sidebar-avatar-wrapper"
+                            class="skeleton skeleton-circle skeleton-avatar-lg d-inline-block">
+                            <img id="sidebar-user-avatar" src="" alt="User avatar" class="rounded-circle mb-2"
+                                width="60" height="60" style="display: none;" />
+                        </div>
                         <div class="mb-2">
-                            <span class="badge bg-primary">Months: <span id="sidebar-months">0</span></span>
+                            <span class="badge bg-primary">Months: <span id="sidebar-months-wrapper"
+                                    class="skeleton skeleton-text d-inline-block"
+                                    style="width: 20px; height: 16px;"><span id="sidebar-months"
+                                        style="display: none;">0</span></span></span>
                         </div>
                         <div class="d-flex justify-content-center mb-2">
                             <div class="mx-2">
-                                <div class="fw-bold" id="sidebar-followers">0</div>
+                                <div class="fw-bold skeleton skeleton-text d-inline-block" id="sidebar-followers"
+                                    style="width: 25px; height: 20px;"></div>
                                 <small>Followers</small>
                             </div>
                             <div class="mx-2">
-                                <div class="fw-bold" id="sidebar-following">0</div>
+                                <div class="fw-bold skeleton skeleton-text d-inline-block" id="sidebar-following"
+                                    style="width: 25px; height: 20px;"></div>
                                 <small>Following</small>
                             </div>
                         </div>
@@ -99,8 +110,8 @@
         <!-- Main Content -->
         <div class="flex-grow-1">
             <!-- Onboarding Reminder -->
-            <div class="alert alert-warning d-flex align-items-center justify-content-between p-3 mt-4 mx-auto hidden" role="alert"
-                id="onboarding-alert" style="max-width: 700px;">
+            <div class="alert alert-warning d-flex align-items-center justify-content-between p-3 mt-4 mx-auto hidden"
+                role="alert" id="onboarding-alert" style="max-width: 700px;">
                 <div class="d-flex align-items-center">
                     <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem;"></i>
                     <div>

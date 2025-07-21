@@ -160,8 +160,26 @@ async function fillProfile(currentUser) {
         followBtn?.classList.add("d-none");
     }
 
-    if (profilePic) profilePic.src = photoURL;
-    if (userFullName) userFullName.textContent = `@${name}`
+    if (profilePic) {
+        const profilePicWrapper = document.getElementById("profile-pic-wrapper");
+
+        // Set up the onload event to hide skeleton and show image
+        profilePic.onload = () => {
+            profilePic.style.display = "block";
+            if (profilePicWrapper) {
+                profilePicWrapper.classList.remove("skeleton", "skeleton-circle");
+            }
+        };
+
+        // Set the image source to trigger loading
+        profilePic.src = photoURL;
+    }
+    if (userFullName) {
+        userFullName.textContent = `${name}`;
+        userFullName.classList.remove("skeleton", "skeleton-text");
+        userFullName.style.width = "auto";
+        userFullName.style.height = "auto";
+    }
     if (userName) {
         let badges = "";
 
@@ -177,11 +195,24 @@ async function fillProfile(currentUser) {
             badges += ` <i class="bi bi-award-fill text-warning" title="Owner"></i>`;
         }
 
-        userName.innerHTML = `${username}${badges}`;
+        userName.innerHTML = `@${username}${badges}`;
+        userName.classList.remove("skeleton", "skeleton-text");
+        userName.style.width = "auto";
+        userName.style.height = "auto";
     }
 
-    if (followerCountSpan) followerCountSpan.textContent = viewedProfileFollowerCount;
-    if (followingCountSpan) followingCountSpan.textContent = viewedProfileFollowingCount;
+    if (followerCountSpan) {
+        followerCountSpan.textContent = viewedProfileFollowerCount;
+        followerCountSpan.classList.remove("skeleton", "skeleton-text");
+        followerCountSpan.style.width = "auto";
+        followerCountSpan.style.height = "auto";
+    }
+    if (followingCountSpan) {
+        followingCountSpan.textContent = viewedProfileFollowingCount;
+        followingCountSpan.classList.remove("skeleton", "skeleton-text");
+        followingCountSpan.style.width = "auto";
+        followingCountSpan.style.height = "auto";
+    }
     if (myFollowingCountDisplay) myFollowingCountDisplay.textContent = currentUserFollowingCount;
 }
 
