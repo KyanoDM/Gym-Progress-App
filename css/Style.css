@@ -54,3 +54,8 @@ font-weight: 500;
 #side-nav .active {
     color: rgb(32, 32, 235);
 }
+
+#search-input {
+    width: 100%;
+        box-sizing: border-box;
+}
