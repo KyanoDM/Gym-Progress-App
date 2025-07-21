@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
     onAuthStateChanged(auth, async (user) => { // Made the callback async
         if (user) {
             avatar.forEach(img => {
-                img.src = user.photoURL || "image/img.jpg"; // Added fallback for photoURL
+                img.src = user.photoURL || "Image/img.jpg"; // Added fallback for photoURL
                 console.log(user.photoURL);
                 img.classList.remove("d-none");
             });
@@ -134,7 +134,7 @@ async function handleUserSearch(queryText) {
                 id: doc.id,
                 username: data.account?.username,
                 name: data.account?.name,
-                photoURL: data.account?.photoURL || "image/img.jpg"
+                photoURL: data.account?.photoURL || "Image/img.jpg"
             });
         });
 

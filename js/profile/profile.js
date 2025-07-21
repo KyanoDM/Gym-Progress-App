@@ -29,7 +29,7 @@ const profileUid = urlParams.get("uid");
 function updateAvatars(user) {
     const avatars = document.querySelectorAll("#user-avatar");
     avatars.forEach(img => {
-        img.src = user.photoURL || "image/img.jpg";
+        img.src = user.photoURL || "Image/img.jpg";
         img.classList.remove("d-none");
     });
 }
@@ -47,7 +47,7 @@ async function fillProfile(currentUser) {
 
     let name = "Unknown";
     let username = "unknown";
-    let photoURL = "image/img.jpg";
+    let photoURL = "Image/img.jpg";
     let viewedProfileFollowerCount = 0; // For the profile being viewed
     let viewedProfileFollowingCount = 0; // For the profile being viewed (this shouldn't change with your action)
     let currentUserFollowingCount = 0;   // IMPORTANT: This is *your* following count
@@ -240,7 +240,7 @@ async function handleUserSearch(queryText) {
                 id: doc.id,
                 username: data.account?.username,
                 name: data.account?.name,
-                photoURL: data.account?.photoURL || "image/img.jpg"
+                photoURL: data.account?.photoURL || "Image/img.jpg"
             });
         });
 
