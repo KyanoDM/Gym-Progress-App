@@ -30,6 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     const name = user.displayName;
                     const photoURL = user.photoURL;
                     const creationTime = user.metadata?.creationTime;
+                    const isVerified = false;
+                    const isAdmin = false;
+                    const isOwner = false;
                     const email = user.email;
 
                     if (!userSnap.exists()) {
@@ -41,7 +44,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                 createdAt: creationTime,
                                 lastLogin: new Date(),
                                 photoURL,
-                                username: "Guest"
+                                username: "Guest",
+                                isVerified,
+                                isAdmin,
+                                isOwner,
+                                isVerified: false,
+                                isAdmin: false,
+                                isOwner: false
                             },
                             preferences: {
                                 weightUnit: "kg",
@@ -91,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Update display name
             await updateProfile(user, {
                 displayName: name,
-                photoURL: "image/img.jpg"
+                photoURL: "Image/img.jpg"
             });
             
 
@@ -103,8 +112,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     email: email,
                     createdAt: new Date(),
                     lastLogin: new Date(),
-                    photoURL: "image/img.jpg",
-                    username: "Guest"
+                    photoURL: "Image/img.jpg",
+                    username: "Guest",
+                    isVerified: false,
+                    isAdmin: false,
+                    isOwner: false
                 },
                 preferences: {
                     weightUnit: "kg",

@@ -73,9 +73,12 @@ async function saveUserName(userNameInput, termsCheckBox, userNameError, termsEr
     const userRef = doc(db, "users", uid);
 
     try {
+        // Always use lowercase for the username
+        const lowerUsername = username.toLowerCase();
+
         // Check if username is already taken
         const usersRef = collection(db, "users");
-        const usernameQuery = query(usersRef, where("account.username", "==", username));
+        const usernameQuery = query(usersRef, where("account.username", "==", lowerUsername));
         const querySnapshot = await getDocs(usernameQuery);
 
         let usernameTaken = false;
@@ -92,7 +95,7 @@ async function saveUserName(userNameInput, termsCheckBox, userNameError, termsEr
         }
 
         await updateDoc(userRef, {
-            "account.username": username,
+            "account.username": lowerUsername,
             "onboarding.usernameSet": true
         });
 

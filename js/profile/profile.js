@@ -20,15 +20,14 @@ import {
     runTransaction
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-// Init
+// Firebase init
 const auth = getAuth(app);
 const db = getFirestore(app);
 const urlParams = new URLSearchParams(window.location.search);
 const profileUid = urlParams.get("uid");
 
 function updateAvatars(user) {
-    const avatars = document.querySelectorAll("#user-avatar");
-    avatars.forEach(img => {
+    document.querySelectorAll("#user-avatar").forEach(img => {
         img.src = user.photoURL || "Image/img.jpg";
         img.classList.remove("d-none");
     });
@@ -40,45 +39,55 @@ async function fillProfile(currentUser) {
     const userFullName = document.querySelector("#user-fullname");
     const followBtn = document.querySelector("#follow-btn");
     const followerCountSpan = document.querySelector("#follower-count");
-    const followingCountSpan = document.querySelector("#following-count"); // This is the span on the *viewed profile's* card
-    const myFollowingCountDisplay = document.querySelector("#my-following-count-display"); // Element for *your* following count (e.g., in navbar/sidebar)
+    const followingCountSpan = document.querySelector("#following-count");
+    const myFollowingCountDisplay = document.querySelector("#my-following-count-display");
+    const followerCountSpanBottom = document.querySelector("#sidebar-followers");
+    const followingCountSpanBottom = document.querySelector("#sidebar-following");
+
+    let viewedProfileAccount = {};
 
     const isOwnProfile = !profileUid || profileUid === currentUser.uid;
 
     let name = "Unknown";
     let username = "unknown";
     let photoURL = "Image/img.jpg";
-    let viewedProfileFollowerCount = 0; // For the profile being viewed
-    let viewedProfileFollowingCount = 0; // For the profile being viewed (this shouldn't change with your action)
-    let currentUserFollowingCount = 0;   // IMPORTANT: This is *your* following count
+    let viewedProfileFollowerCount = 0;
+    let viewedProfileFollowingCount = 0;
+    let currentUserFollowingCount = 0;
 
-    // Reference to the document of the profile being viewed
     const viewedProfileDocRef = doc(db, "users", isOwnProfile ? currentUser.uid : profileUid);
     const viewedProfileDocSnap = await getDoc(viewedProfileDocRef);
 
     if (viewedProfileDocSnap.exists()) {
         const viewedProfileData = viewedProfileDocSnap.data();
-        const viewedProfileAccount = viewedProfileData.account || {};
+        viewedProfileAccount = viewedProfileData.account || {};
 
-        name = viewedProfileAccount.name || "Unknown";
-        username = viewedProfileAccount.username || "unknown";
+        name = viewedProfileAccount.name || name;
+        username = viewedProfileAccount.username || username;
         photoURL = viewedProfileAccount.photoURL || photoURL;
         viewedProfileFollowerCount = viewedProfileAccount.followerCount || 0;
         viewedProfileFollowingCount = viewedProfileAccount.followingCount || 0;
 
-        // Special handling for `currentUserFollowingCount` and `followBtn` visibility
+        const userRef = doc(db, "users", currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
+        const accountData = userData.account || {};
+        const followers = accountData.followerCount || 0;
+        const following = accountData.followingCount || 0;
+
+        if (followerCountSpanBottom) followerCountSpanBottom.textContent = followers;
+        if (followingCountSpanBottom) followingCountSpanBottom.textContent = following;
+
         const currentUserDocSnap = await getDoc(doc(db, "users", currentUser.uid));
         if (currentUserDocSnap.exists()) {
             const currentUserData = currentUserDocSnap.data();
             currentUserFollowingCount = currentUserData.account?.followingCount || 0;
 
             if (!isOwnProfile) {
-                // Only show follow button if it's NOT our own profile
                 let isFollowing = (currentUserData.following || []).includes(profileUid);
                 followBtn.textContent = isFollowing ? "Unfollow" : "Follow";
-                followBtn.classList.remove("d-none"); // Make button visible
+                followBtn.classList.remove("d-none");
 
-                // Add or re-add the click listener
                 followBtn.onclick = async () => {
                     const currentUserRef = doc(db, "users", currentUser.uid);
                     const targetUserRef = doc(db, "users", profileUid);
@@ -88,20 +97,16 @@ async function fillProfile(currentUser) {
                             const currentUserDoc = await transaction.get(currentUserRef);
                             const targetUserDoc = await transaction.get(targetUserRef);
 
-                            if (!currentUserDoc.exists() || !targetUserDoc.exists()) {
-                                throw new Error("User document(s) do not exist!");
-                            }
+                            if (!currentUserDoc.exists() || !targetUserDoc.exists()) throw new Error("User document(s) do not exist!");
 
                             const currentUserDataInTransaction = currentUserDoc.data();
                             const targetUserDataInTransaction = targetUserDoc.data();
 
                             let currentFollowerCountInDB = targetUserDataInTransaction.account?.followerCount || 0;
                             let currentFollowingCountInDB = currentUserDataInTransaction.account?.followingCount || 0;
-
                             let isCurrentlyFollowing = (currentUserDataInTransaction.following || []).includes(profileUid);
 
                             if (isCurrentlyFollowing) {
-                                // UNFOLLOW LOGIC
                                 transaction.update(currentUserRef, {
                                     following: arrayRemove(profileUid),
                                     "account.followingCount": Math.max(0, currentFollowingCountInDB - 1)
@@ -112,11 +117,9 @@ async function fillProfile(currentUser) {
                                 });
                                 isFollowing = false;
                                 followBtn.textContent = "Follow";
-                                viewedProfileFollowerCount = Math.max(0, viewedProfileFollowerCount - 1); // Update local for immediate display
-                                currentUserFollowingCount = Math.max(0, currentUserFollowingCount - 1); // Update *your* local count
-
+                                viewedProfileFollowerCount = Math.max(0, viewedProfileFollowerCount - 1);
+                                currentUserFollowingCount = Math.max(0, currentUserFollowingCount - 1);
                             } else {
-                                // FOLLOW LOGIC
                                 transaction.update(currentUserRef, {
                                     following: arrayUnion(profileUid),
                                     "account.followingCount": currentFollowingCountInDB + 1
@@ -127,51 +130,54 @@ async function fillProfile(currentUser) {
                                 });
                                 isFollowing = true;
                                 followBtn.textContent = "Unfollow";
-                                viewedProfileFollowerCount++; // Update local for immediate display
-                                currentUserFollowingCount++; // Update *your* local count
+                                viewedProfileFollowerCount++;
+                                currentUserFollowingCount++;
                             }
                         });
 
-                        // Update UI elements AFTER successful transaction
                         if (followerCountSpan) followerCountSpan.textContent = viewedProfileFollowerCount;
                         if (myFollowingCountDisplay) myFollowingCountDisplay.textContent = currentUserFollowingCount;
-
                     } catch (error) {
                         console.error("Transaction failed:", error);
                     }
                 };
             } else {
-                // If it's own profile, ensure follow button is hidden
                 followBtn?.classList.add("d-none");
-                currentUserFollowingCount = viewedProfileFollowingCount; // On own profile, your following count is the profile's
+                currentUserFollowingCount = viewedProfileFollowingCount;
             }
         } else {
-            console.warn("Current user's Firestore document not found.");
-            // Fallback for current user's data if their document doesn't exist
-            currentUserFollowingCount = currentUser.email?.split("@")[0] || 0; // Or whatever fallback makes sense for your own following count
-            if (!isOwnProfile) {
-                // If current user's doc doesn't exist and we're viewing another profile, hide follow button
-                followBtn?.classList.add("d-none");
-            }
+            currentUserFollowingCount = currentUser.email?.split("@")[0] || 0;
+            if (!isOwnProfile) followBtn?.classList.add("d-none");
         }
     } else {
-        console.error("Viewed user profile not found in Firestore.");
-        // Fallback if the profile being viewed (could be own or other) does not exist in Firestore.
-        // This might happen for brand new users if their doc isn't created on sign-up yet.
-        // Or if a non-existent UID is passed in the URL.
-        name = currentUser.displayName || currentUser.email?.split("@")[0]; // Use Firebase Auth for current user's info
+        name = currentUser.displayName || currentUser.email?.split("@")[0];
         username = currentUser.email?.split("@")[0];
         photoURL = currentUser.photoURL || photoURL;
-        followBtn?.classList.add("d-none"); // Hide follow button as no valid profile is loaded
-        // Default counts remain 0
+        followBtn?.classList.add("d-none");
     }
 
-    // Update common UI elements at the end of fillProfile (for both own and other profiles)
     if (profilePic) profilePic.src = photoURL;
     if (userName) userName.textContent = `@${username}`;
-    if (userFullName) userFullName.textContent = name;
+    if (userFullName) {
+        let badges = "";
+
+        if (viewedProfileAccount.isVerified) {
+            badges += ` <i class="bi bi-patch-check-fill text-primary" title="Verified"></i>`;
+        }
+
+        if (viewedProfileAccount.isAdmin) {
+            badges += ` <i class="bi bi-shield-lock-fill text-danger" title="Admin"></i>`;
+        }
+
+        if (viewedProfileAccount.isOwner) {
+            badges += ` <i class="bi bi-award-fill text-warning" title="Owner"></i>`;
+        }
+
+        userName.innerHTML = `${name}${badges}`;
+    }
+
     if (followerCountSpan) followerCountSpan.textContent = viewedProfileFollowerCount;
-    if (followingCountSpan) followingCountSpan.textContent = viewedProfileFollowingCount; // This shows the *viewed profile's* following count
+    if (followingCountSpan) followingCountSpan.textContent = viewedProfileFollowingCount;
     if (myFollowingCountDisplay) myFollowingCountDisplay.textContent = currentUserFollowingCount;
 }
 
@@ -185,25 +191,6 @@ function setupLogout() {
         });
     }
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            updateAvatars(user);
-            fillProfile(user);
-            setupLogout();
-            const avatar = document.querySelectorAll("#user-avatar");
-            const profileBtns = document.querySelectorAll("#ProfileBtn");
-            addEventListeners(profileBtns);
-            const searchInput = document.querySelector("#search-input");
-            if (searchInput) {
-                searchInput.addEventListener("input", () => handleUserSearch(searchInput.value.trim().toLowerCase()));
-            }
-        } else {
-            window.location.href = "login.html";
-        }
-    });
-});
 
 function addEventListeners(profileBtns) {
     profileBtns.forEach(btn => {
@@ -254,7 +241,7 @@ function displaySearchResults(users) {
     const container = document.querySelector("#search-results");
     if (!container) return;
 
-    container.innerHTML = ""; // Clear previous results
+    container.innerHTML = "";
 
     if (users.length === 0) {
         container.innerHTML = `<div class="text-muted p-2">No users found.</div>`;
@@ -265,7 +252,6 @@ function displaySearchResults(users) {
         const card = document.createElement("div");
         card.className = "card mb-2 p-2 d-flex flex-row align-items-center gap-3";
         card.style.cursor = "pointer";
-
         card.innerHTML = `
             <img src="${user.photoURL}" width="40" height="40" class="rounded-circle border">
             <div>
@@ -273,11 +259,26 @@ function displaySearchResults(users) {
                 <span class="text-muted">${user.name}</span>
             </div>
         `;
-
         card.addEventListener("click", () => {
             window.location.href = `profile.html?uid=${user.id}`;
         });
-
         container.appendChild(card);
     });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            updateAvatars(user);
+            fillProfile(user);
+            setupLogout();
+            addEventListeners(document.querySelectorAll("#ProfileBtn"));
+            const searchInput = document.querySelector("#search-input");
+            if (searchInput) {
+                searchInput.addEventListener("input", () => handleUserSearch(searchInput.value.trim().toLowerCase()));
+            }
+        } else {
+            window.location.href = "login.html";
+        }
+    });
+});
