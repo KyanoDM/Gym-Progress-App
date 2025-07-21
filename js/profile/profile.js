@@ -132,6 +132,15 @@ async function fillProfile(currentUser) {
 
                         if (followerCountSpan) followerCountSpan.textContent = viewedProfileFollowerCount;
                         if (myFollowingCountDisplay) myFollowingCountDisplay.textContent = currentUserFollowingCount;
+
+                        const updatedUserSnap = await getDoc(doc(db, "users", currentUser.uid));
+                        const updatedAccountData = updatedUserSnap.data()?.account || {};
+
+                        if (followerCountSpanBottom)
+                            followerCountSpanBottom.textContent = updatedAccountData.followerCount || 0;
+                        if (followingCountSpanBottom)
+                            followingCountSpanBottom.textContent = updatedAccountData.followingCount || 0;
+
                     } catch (error) {
                         console.error("Transaction failed:", error);
                     }
