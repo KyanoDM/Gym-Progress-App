@@ -20,6 +20,7 @@ function Initialize() {
 
     setupChangePicture();
     setupProfileForm();
+    setupUnitsForm();
     loadCurrentUserData();
     loadPfp();
 }
@@ -108,6 +109,12 @@ function loadCurrentUserData() {
                 const usernameInput = document.getElementById("profile-username");
                 const usernameWrapper = document.getElementById("username-input-wrapper");
 
+                // Units elements
+                const weightUnitWrapper = document.getElementById("weight-unit-wrapper");
+                const weightUnitOptions = document.getElementById("weight-unit-options");
+                const measurementUnitWrapper = document.getElementById("measurement-unit-wrapper");
+                const measurementUnitOptions = document.getElementById("measurement-unit-options");
+
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data();
 
@@ -124,9 +131,32 @@ function loadCurrentUserData() {
                     } else {
                         usernameInput.placeholder = "Enter your username";
                     }
+
+                    // Load units preferences
+                    const preferences = userData.preferences || {};
+                    const weightUnit = preferences.weightUnit || "kg";
+                    const measurementUnit = preferences.measurementUnit || "cm";
+
+                    // Set weight unit radio button
+                    const weightRadio = document.querySelector(`input[name="weight-unit"][value="${weightUnit}"]`);
+                    if (weightRadio) {
+                        weightRadio.checked = true;
+                    }
+
+                    // Set measurement unit radio button
+                    const measurementRadio = document.querySelector(`input[name="measurement-unit"][value="${measurementUnit}"]`);
+                    if (measurementRadio) {
+                        measurementRadio.checked = true;
+                    }
                 } else {
                     nameInput.placeholder = user.displayName || "Enter your name";
                     usernameInput.placeholder = "Enter your username";
+
+                    // Set default units
+                    const defaultWeightRadio = document.querySelector(`input[name="weight-unit"][value="kg"]`);
+                    const defaultMeasurementRadio = document.querySelector(`input[name="measurement-unit"][value="cm"]`);
+                    if (defaultWeightRadio) defaultWeightRadio.checked = true;
+                    if (defaultMeasurementRadio) defaultMeasurementRadio.checked = true;
                 }
 
                 // Show inputs and remove skeletons
@@ -137,6 +167,20 @@ function loadCurrentUserData() {
                 }
                 if (usernameWrapper) {
                     usernameWrapper.classList.remove("skeleton", "skeleton-text");
+                }
+
+                // Show units and remove skeletons
+                if (weightUnitOptions) {
+                    weightUnitOptions.style.display = "block";
+                    if (weightUnitWrapper) {
+                        weightUnitWrapper.classList.remove("skeleton", "skeleton-text");
+                    }
+                }
+                if (measurementUnitOptions) {
+                    measurementUnitOptions.style.display = "block";
+                    if (measurementUnitWrapper) {
+                        measurementUnitWrapper.classList.remove("skeleton", "skeleton-text");
+                    }
                 }
 
                 // Add event listener to convert username to lowercase as user types
@@ -301,6 +345,15 @@ function setupProfileForm() {
                 img.classList.remove("d-none");
             });
 
+            // Update navigation avatars specifically
+            const navAvatar = document.getElementById("nav-user-avatar");
+            const sidebarAvatar = document.getElementById("sidebar-user-avatar");
+            const settingsAvatar = document.getElementById("settings-profile-avatar");
+
+            if (navAvatar) navAvatar.src = newPhotoURL;
+            if (sidebarAvatar) sidebarAvatar.src = newPhotoURL;
+            if (settingsAvatar) settingsAvatar.src = newPhotoURL;
+
             tempUploadedPhotoURL = null;
             msgElem.textContent = "";
             formMsg.textContent = "Profile updated successfully!";
@@ -311,6 +364,58 @@ function setupProfileForm() {
             formMsg.className = "text-danger small mt-2 text-center";
         } finally {
             changeBtn.disabled = false;
+        }
+    });
+}
+
+function setupUnitsForm() {
+    const auth = getAuth();
+    const db = getFirestore();
+
+    const unitsForm = document.getElementById("units-settings-form");
+    if (!unitsForm) return;
+
+    let unitsMsg = document.createElement("div");
+    unitsMsg.className = "text-muted small mt-2 text-center";
+    unitsForm.querySelector("button[type='submit']").insertAdjacentElement("afterend", unitsMsg);
+
+    unitsForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const user = auth.currentUser;
+        if (!user) {
+            unitsMsg.textContent = "You must be logged in to save units.";
+            unitsMsg.className = "text-danger small mt-2 text-center";
+            return;
+        }
+
+        unitsMsg.textContent = "";
+
+        try {
+            // Get selected units
+            const weightUnit = document.querySelector('input[name="weight-unit"]:checked')?.value;
+            const measurementUnit = document.querySelector('input[name="measurement-unit"]:checked')?.value;
+
+            if (!weightUnit || !measurementUnit) {
+                unitsMsg.textContent = "Please select both weight and measurement units.";
+                unitsMsg.className = "text-danger small mt-2 text-center";
+                return;
+            }
+
+            // Update units in database
+            const userDocRef = doc(db, "users", user.uid);
+            await updateDoc(userDocRef, {
+                "preferences.weightUnit": weightUnit,
+                "preferences.measurementUnit": measurementUnit
+            });
+
+            unitsMsg.textContent = "Units updated successfully!";
+            unitsMsg.className = "text-success small mt-2 text-center";
+
+        } catch (error) {
+            console.error("Error saving units:", error);
+            unitsMsg.textContent = "Failed to save units.";
+            unitsMsg.className = "text-danger small mt-2 text-center";
         }
     });
 }
