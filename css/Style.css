@@ -907,6 +907,35 @@ span:not(.skeleton) {
 }
 
 /* Dark Mode Modal Styling */
+
+[data-bs-theme="dark"] #viewNotes {
+    color: #000 !important;
+}
+
+/* Fix modal backdrop issues */
+[data-bs-theme="dark"] .modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-bs-theme="dark"] .modal-backdrop.show {
+    opacity: 0.5 !important;
+}
+
+/* Ensure proper modal cleanup - applies to both light and dark mode */
+body:not(.modal-open) .modal-backdrop {
+    display: none !important;
+}
+
+.modal-backdrop.fade:not(.show) {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Additional modal backdrop cleanup */
+.modal:not(.show)~.modal-backdrop {
+    display: none !important;
+}
+
 [data-bs-theme="dark"] .modal-content {
     background-color: #2d2d2d !important;
     border-color: #404040 !important;

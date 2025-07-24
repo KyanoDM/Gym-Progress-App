@@ -27,23 +27,24 @@ import {
 
 const db = getFirestore(app); document.addEventListener("DOMContentLoaded", () => {
     Initialize();
-    setupModalCleanup();
+    setupModalBackdropCleanup();
 });
 
-// Global modal cleanup function to prevent backdrop issues
-function setupModalCleanup() {
-    // Clean up any leftover backdrops on page load
+// Global function to clean up modal backdrops
+function setupModalBackdropCleanup() {
+    // Clean up any existing backdrops on page load
     setTimeout(() => {
         const backdrops = document.querySelectorAll('.modal-backdrop');
         backdrops.forEach(backdrop => backdrop.remove());
         document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
     }, 100);
 
     // Add event listeners to all modals for proper cleanup
     const modals = document.querySelectorAll('.modal');
     modals.forEach(modal => {
-        modal.addEventListener('hidden.bs.modal', function() {
-            // Small delay to ensure Bootstrap has finished its cleanup
+        modal.addEventListener('hidden.bs.modal', function () {
             setTimeout(() => {
                 const backdrops = document.querySelectorAll('.modal-backdrop');
                 backdrops.forEach(backdrop => backdrop.remove());
