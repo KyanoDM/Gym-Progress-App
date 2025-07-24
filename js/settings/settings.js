@@ -22,21 +22,9 @@ function Initialize() {
     setupProfileForm();
     setupUnitsForm();
     loadCurrentUserData();
-    loadPfp();
 }
 
-function loadPfp() {
-    const profilePic = document.getElementById("settings-profile-avatar");
-    profilePic.onload = () => {
-        // Hide skeleton background by removing the class
-        document.getElementById("profile-pic-wrapper").classList.remove("skeleton-circle");
-        profilePic.classList.add("loaded");
-    };
 
-    // When loading new image:
-    profilePic.src = user.photoURL || "default-avatar.png";
-
-}
 
 let tempUploadedPhotoURL = null;  // Store uploaded image URL before save
 let msgElem;
@@ -87,6 +75,20 @@ function loadCurrentUserData() {
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
+            // Load profile picture with skeleton handling
+            const profilePic = document.getElementById("settings-profile-avatar");
+            if (profilePic) {
+                profilePic.onload = () => {
+                    // Hide skeleton background by removing the class
+                    const wrapper = document.getElementById("profile-pic-wrapper");
+                    if (wrapper) {
+                        wrapper.classList.remove("skeleton-circle");
+                    }
+                    profilePic.classList.add("loaded");
+                };
+                profilePic.src = user.photoURL || "Image/img.jpg";
+            }
+
             const profilePicElements = document.querySelectorAll(".profile-pic");
             profilePicElements.forEach(img => {
                 img.src = user.photoURL || "Image/img.jpg";

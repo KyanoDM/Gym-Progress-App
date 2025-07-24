@@ -14,6 +14,7 @@ import {
     getDoc,
     updateDoc,
     serverTimestamp,
+    increment,
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import {
     getStorage,
@@ -138,6 +139,9 @@ async function loadUserMonths(userId) {
 
         // Update sidebar months count
         updateSidebarMonthsCount(months.length);
+
+        // Sync months count in database (in case there's a mismatch)
+        await syncMonthsCount(userId, months.length);
 
         // Set up toggle functionality after cards are created
         setupDetailsToggle();
@@ -329,6 +333,41 @@ function updateSidebarMonthsCount(count) {
         monthsCountSpan.style.display = "inline";
         monthsCountSpan.textContent = count;
         monthsWrapper.classList.remove("skeleton", "skeleton-text");
+    }
+}
+
+// Database functions for months counter
+async function incrementMonthsCount(userId) {
+    try {
+        const userDocRef = doc(db, 'users', userId);
+        await updateDoc(userDocRef, {
+            'account.monthsCount': increment(1)
+        });
+    } catch (error) {
+        console.error('Error incrementing months count:', error);
+    }
+}
+
+async function decrementMonthsCount(userId) {
+    try {
+        const userDocRef = doc(db, 'users', userId);
+        await updateDoc(userDocRef, {
+            'account.monthsCount': increment(-1)
+        });
+    } catch (error) {
+        console.error('Error decrementing months count:', error);
+    }
+}
+
+// Sync months count in database with actual count
+async function syncMonthsCount(userId, actualCount) {
+    try {
+        const userDocRef = doc(db, 'users', userId);
+        await updateDoc(userDocRef, {
+            'account.monthsCount': actualCount
+        });
+    } catch (error) {
+        console.error('Error syncing months count:', error);
     }
 }
 
@@ -1121,6 +1160,9 @@ async function handleDeleteMonth(monthId, monthName, year) {
         // Delete the month document from Firestore
         await deleteDoc(monthDocRef);
 
+        // Decrement months counter in user account
+        await decrementMonthsCount(user.uid);
+
         // Reload the months to reflect the change
         await loadUserMonths(user.uid);
 
@@ -1670,6 +1712,9 @@ async function handleAddMonth() {
 
     // Add to Firestore
     await addDoc(monthsRef, monthData);
+
+    // Increment months counter in user account
+    await incrementMonthsCount(user.uid);
 
     updateProgress(100, `<div class="progress-step"><i class="bi bi-check-circle me-1"></i>Month added successfully!</div>`);
 

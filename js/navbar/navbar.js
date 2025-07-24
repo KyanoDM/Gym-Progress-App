@@ -20,25 +20,12 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function setupNavigation() {
-    const avatarImgs = document.querySelectorAll("#user-avatar");
     const profileBtns = document.querySelectorAll("#ProfileBtn");
     const settingsBtn = document.querySelector("#SettingsBtn") || document.querySelector(".dropdown-item:has(i.bi-gear)");
-    const logoutBtn = document.querySelector("#logout-btn");
+    const sidebarLogoutBtn = document.querySelector("#sidebar-logout-btn");
     const followerCountSpan = document.querySelector("#sidebar-followers");
     const followingCountSpan = document.querySelector("#sidebar-following");
     const searchInput = document.querySelector("#search-input");
-
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) return;
-
-        // Avatar - handled by the main skeleton loading function below
-        avatarImgs.forEach(img => {
-            img.src = user.photoURL || "Image/img.jpg";
-            img.classList.remove("d-none");
-        });
-
-        // Profile stats - handled by the main skeleton loading function below
-    });
 
     // Profile buttons
     profileBtns.forEach(btn => {
@@ -54,9 +41,9 @@ function setupNavigation() {
         });
     }
 
-    // Logout button
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => {
+    // Sidebar logout button
+    if (sidebarLogoutBtn) {
+        sidebarLogoutBtn.addEventListener("click", () => {
             signOut(auth)
                 .then(() => window.location.href = "login.html")
                 .catch(err => console.error("Logout failed:", err));
@@ -149,10 +136,7 @@ function displaySearchResults(users) {
 onAuthStateChanged(auth, async (user) => {
     if (!user) return;
 
-    // Get wrappers and images by new IDs
-    const navAvatarWrapper = document.getElementById("nav-avatar-wrapper");
-    const navAvatarImg = document.getElementById("nav-user-avatar");
-
+    // Get sidebar avatar wrapper and image
     const sidebarAvatarWrapper = document.getElementById("sidebar-avatar-wrapper");
     const sidebarAvatarImg = document.getElementById("sidebar-user-avatar");
 
@@ -161,23 +145,19 @@ onAuthStateChanged(auth, async (user) => {
     const monthsCountSpan = document.querySelector("#sidebar-months");
     const monthsWrapper = document.querySelector("#sidebar-months-wrapper");
 
-    // Hide images initially (to show skeletons)
-    navAvatarImg.style.display = "none";
-    sidebarAvatarImg.style.display = "none";
-
-    // Load nav avatar and on load show image + remove skeleton wrapper classes
-    navAvatarImg.onload = () => {
-        navAvatarImg.style.display = "block";
-        navAvatarWrapper.classList.remove("skeleton", "skeleton-circle", "skeleton-avatar-sm");
-    };
-    navAvatarImg.src = user.photoURL || "Image/img.jpg";
+    // Hide sidebar image initially (to show skeletons)
+    if (sidebarAvatarImg) {
+        sidebarAvatarImg.style.display = "none";
+    }
 
     // Load sidebar avatar and on load show image + remove skeleton wrapper classes
-    sidebarAvatarImg.onload = () => {
-        sidebarAvatarImg.style.display = "block";
-        sidebarAvatarWrapper.classList.remove("skeleton", "skeleton-circle", "skeleton-avatar-lg");
-    };
-    sidebarAvatarImg.src = user.photoURL || "Image/img.jpg";
+    if (sidebarAvatarImg && sidebarAvatarWrapper) {
+        sidebarAvatarImg.onload = () => {
+            sidebarAvatarImg.style.display = "block";
+            sidebarAvatarWrapper.classList.remove("skeleton", "skeleton-circle", "skeleton-avatar-lg");
+        };
+        sidebarAvatarImg.src = user.photoURL || "Image/img.jpg";
+    }
 
     // For followers/following counts — skeleton classes already applied in HTML
     // No need to add skeleton classes, just clear content while loading
@@ -202,7 +182,11 @@ onAuthStateChanged(auth, async (user) => {
         followingCountSpan.classList.remove("skeleton", "skeleton-text");
     }
 
-    // Months count is handled by the specific page (months.js, etc.)
-    // No need to handle it here as each page will update it appropriately
+    // Update months count from database
+    if (monthsCountSpan && monthsWrapper) {
+        monthsCountSpan.textContent = account.monthsCount || 0;
+        monthsCountSpan.style.display = "inline";
+        monthsWrapper.classList.remove("skeleton", "skeleton-text");
+    }
 });
 
