@@ -1857,11 +1857,14 @@ async function handleEditMonth() {
         }
     }
 
-    // Handle video upload/update
+    // Handle video upload/update - only process if video actually changed
     let videoUrl = currentMonthData.videoUrl || '';
     let videoType = currentMonthData.videoType || '';
+    let videoHasChanged = false;
 
+    // Check if new video file was selected
     if (videoFileInput.files.length > 0) {
+        videoHasChanged = true;
         // Delete old video if it exists and is a storage file
         if (currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
             updateProgress(55, `<div class="progress-step"><i class="bi bi-trash me-1"></i>Removing old video...</div>`);
@@ -1878,21 +1881,47 @@ async function handleEditMonth() {
         const videoResult = await uploadVideoWithProgress(videoFile, userId, month, year);
         videoUrl = videoResult.url;
         videoType = 'file';
-    } else if (videoUrlInput.value.trim()) {
-        // Delete old video if it was a storage file and now switching to URL
-        if (currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
-            updateProgress(60, `<div class="progress-step"><i class="bi bi-trash me-1"></i>Removing old video file...</div>`);
-            try {
-                const oldVideoRef = ref(storage, currentMonthData.videoUrl);
-                await deleteObject(oldVideoRef);
-            } catch (error) {
-                // Silent error handling
-            }
-        }
+    }
+    // Check if video URL changed
+    else if (videoUrlInput.value.trim() !== (currentMonthData.videoUrl || '')) {
+        videoHasChanged = true;
+        const newVideoUrl = videoUrlInput.value.trim();
 
-        updateProgress(70, `<div class="progress-step"><i class="bi bi-link-45deg me-1"></i>Updating video URL</div>`);
-        videoUrl = videoUrlInput.value.trim();
-        videoType = 'url';
+        // If there's a new URL and it's different from current
+        if (newVideoUrl) {
+            // Delete old video if it was a storage file and now switching to URL
+            if (currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
+                updateProgress(60, `<div class="progress-step"><i class="bi bi-trash me-1"></i>Removing old video file...</div>`);
+                try {
+                    const oldVideoRef = ref(storage, currentMonthData.videoUrl);
+                    await deleteObject(oldVideoRef);
+                } catch (error) {
+                    // Silent error handling
+                }
+            }
+
+            updateProgress(70, `<div class="progress-step"><i class="bi bi-link-45deg me-1"></i>Updating video URL</div>`);
+            videoUrl = newVideoUrl;
+            videoType = 'url';
+        } else {
+            // Video URL was cleared - remove video
+            if (currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
+                updateProgress(60, `<div class="progress-step"><i class="bi bi-trash me-1"></i>Removing video...</div>`);
+                try {
+                    const oldVideoRef = ref(storage, currentMonthData.videoUrl);
+                    await deleteObject(oldVideoRef);
+                } catch (error) {
+                    // Silent error handling
+                }
+            }
+            videoUrl = '';
+            videoType = '';
+        }
+    }
+
+    // Skip video processing progress if video didn't change
+    if (!videoHasChanged && !window.selectedFiles?.length && !window.imagesToDelete?.length) {
+        updateProgress(90, `<div class="progress-step"><i class="bi bi-pencil me-1"></i>Updating month details...</div>`);
     }
 
     // Prepare updated month data
