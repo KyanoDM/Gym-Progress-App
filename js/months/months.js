@@ -1285,8 +1285,8 @@ async function handleAddMonth() {
     if (videoFileInput.files.length > 0) {
         const videoFile = videoFileInput.files[0];
         // Check file size (100MB limit)
-        if (videoFile.size > 100 * 1024 * 1024) {
-            throw new Error('Video file is too large. Maximum size is 100MB.');
+        if (videoFile.size > 200 * 1024 * 1024) {
+            throw new Error('Video file is too large. Maximum size is 200MB.');
         }
 
         const videoFileName = `${userId}_${month}_${year}_video_${Date.now()}.${videoFile.name.split('.').pop()}`;
