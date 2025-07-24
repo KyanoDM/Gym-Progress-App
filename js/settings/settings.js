@@ -21,6 +21,8 @@ function Initialize() {
     setupChangePicture();
     setupProfileForm();
     setupUnitsForm();
+    setupThemeForm();
+    setupExportButtons();
     loadCurrentUserData();
 }
 
@@ -411,4 +413,218 @@ function setupUnitsForm() {
             unitsMsg.className = "text-danger small mt-2 text-center";
         }
     });
+}
+
+function setupThemeForm() {
+    const themeForm = document.getElementById("theme-settings-form");
+    if (!themeForm) return;
+
+    let themeMsg = document.createElement("div");
+    themeMsg.className = "text-muted small mt-2 text-center";
+    themeForm.querySelector("button[type='submit']").insertAdjacentElement("afterend", themeMsg);
+
+    // Load current theme from localStorage
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    const themeRadio = document.querySelector(`input[name="theme"][value="${currentTheme}"]`);
+    if (themeRadio) {
+        themeRadio.checked = true;
+    }
+
+    // Apply theme immediately when radio buttons change
+    document.querySelectorAll('input[name="theme"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                applyTheme(e.target.value);
+            }
+        });
+    });
+
+    // Apply current theme on load
+    applyTheme(currentTheme);
+
+    themeForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const selectedTheme = document.querySelector('input[name="theme"]:checked')?.value;
+        if (!selectedTheme) {
+            themeMsg.textContent = "Please select a theme.";
+            themeMsg.className = "text-danger small mt-2 text-center";
+            return;
+        }
+
+        try {
+            // Save theme to localStorage
+            localStorage.setItem('theme', selectedTheme);
+
+            // Apply the theme
+            applyTheme(selectedTheme);
+
+            themeMsg.textContent = "Theme saved successfully!";
+            themeMsg.className = "text-success small mt-2 text-center";
+
+        } catch (error) {
+            themeMsg.textContent = "Failed to save theme.";
+            themeMsg.className = "text-danger small mt-2 text-center";
+        }
+    });
+}
+
+function applyTheme(theme) {
+    const htmlElement = document.documentElement;
+
+    if (theme === 'dark') {
+        htmlElement.setAttribute('data-bs-theme', 'dark');
+        document.body.classList.add('bg-dark');
+    } else if (theme === 'light') {
+        htmlElement.setAttribute('data-bs-theme', 'light');
+        document.body.classList.remove('bg-dark');
+    } else if (theme === 'auto') {
+        // Follow system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (prefersDark) {
+            htmlElement.setAttribute('data-bs-theme', 'dark');
+            document.body.classList.add('bg-dark');
+        } else {
+            htmlElement.setAttribute('data-bs-theme', 'light');
+            document.body.classList.remove('bg-dark');
+        }
+    }
+}
+
+function setupExportButtons() {
+    const auth = getAuth();
+    const db = getFirestore();
+
+    const jsonBtn = document.getElementById("download-json-btn");
+    const csvBtn = document.getElementById("download-csv-btn");
+
+    if (jsonBtn) {
+        jsonBtn.addEventListener("click", async () => {
+            try {
+                jsonBtn.disabled = true;
+                jsonBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Exporting...';
+
+                const user = auth.currentUser;
+                if (!user) {
+                    alert("You must be logged in to export data.");
+                    return;
+                }
+
+                await exportUserData(user.uid, 'json');
+
+            } catch (error) {
+                alert("Failed to export data. Please try again.");
+            } finally {
+                jsonBtn.disabled = false;
+                jsonBtn.innerHTML = '<i class="bi bi-download me-2"></i>Download JSON';
+            }
+        });
+    }
+
+    if (csvBtn) {
+        csvBtn.addEventListener("click", async () => {
+            try {
+                csvBtn.disabled = true;
+                csvBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Exporting...';
+
+                const user = auth.currentUser;
+                if (!user) {
+                    alert("You must be logged in to export data.");
+                    return;
+                }
+
+                await exportUserData(user.uid, 'csv');
+
+            } catch (error) {
+                alert("Failed to export data. Please try again.");
+            } finally {
+                csvBtn.disabled = false;
+                csvBtn.innerHTML = '<i class="bi bi-download me-2"></i>Download CSV';
+            }
+        });
+    }
+}
+
+async function exportUserData(userId, format) {
+    const db = getFirestore();
+
+    try {
+        // Get user profile data
+        const userDoc = await getDoc(doc(db, "users", userId));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+
+        // Get all months data
+        const monthsRef = collection(db, "users", userId, "months");
+        const monthsSnapshot = await getDocs(monthsRef);
+        const monthsData = [];
+
+        monthsSnapshot.forEach(doc => {
+            monthsData.push({ id: doc.id, ...doc.data() });
+        });
+
+        const exportData = {
+            profile: userData,
+            months: monthsData,
+            exportDate: new Date().toISOString(),
+            totalMonths: monthsData.length
+        };
+
+        if (format === 'json') {
+            downloadJSON(exportData, 'progresspal-data.json');
+        } else if (format === 'csv') {
+            downloadCSV(monthsData, 'progresspal-months.csv');
+        }
+
+    } catch (error) {
+        throw error;
+    }
+}
+
+function downloadJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function downloadCSV(monthsData, filename) {
+    if (monthsData.length === 0) {
+        alert("No months data to export.");
+        return;
+    }
+
+    // Create CSV headers
+    const headers = ['Month', 'Year', 'Weight', 'Gym Visits', 'Rating', 'Description', 'Notes', 'Created Date'];
+
+    // Create CSV rows
+    const rows = monthsData.map(month => [
+        month.month || '',
+        month.year || '',
+        month.weight || '',
+        month.gymVisits || '',
+        month.rating || '',
+        (month.description || '').replace(/"/g, '""'), // Escape quotes
+        (month.notes || '').replace(/"/g, '""'),
+        month.createdAt ? new Date(month.createdAt.seconds * 1000).toISOString() : ''
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [headers, ...rows]
+        .map(row => row.map(field => `"${field}"`).join(','))
+        .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }

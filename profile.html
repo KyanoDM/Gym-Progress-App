@@ -11,6 +11,32 @@
     <link rel="stylesheet" href="css/Style.css">
     <script type="module" src="js/profile/profile.js"></script>
     <script type="module" src="js/navbar/navbar.js"></script>
+    <!-- Apply theme immediately to prevent flash -->
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            function applyTheme(theme) {
+                const htmlElement = document.documentElement;
+                if (theme === 'dark') {
+                    htmlElement.setAttribute('data-bs-theme', 'dark');
+                    document.body.classList.add('bg-dark');
+                } else if (theme === 'light') {
+                    htmlElement.setAttribute('data-bs-theme', 'light');
+                    document.body.classList.remove('bg-dark');
+                } else if (theme === 'auto') {
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    if (prefersDark) {
+                        htmlElement.setAttribute('data-bs-theme', 'dark');
+                        document.body.classList.add('bg-dark');
+                    } else {
+                        htmlElement.setAttribute('data-bs-theme', 'light');
+                        document.body.classList.remove('bg-dark');
+                    }
+                }
+            }
+            applyTheme(savedTheme);
+        })();
+    </script>
 </head>
 
 <body>

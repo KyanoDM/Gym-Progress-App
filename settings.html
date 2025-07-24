@@ -11,6 +11,32 @@
     <link rel="stylesheet" href="css/Style.css">
     <script type="module" src="js/settings/settings.js"></script>
     <script type="module" src="js/navbar/navbar.js"></script>
+    <!-- Apply theme immediately to prevent flash -->
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            function applyTheme(theme) {
+                const htmlElement = document.documentElement;
+                if (theme === 'dark') {
+                    htmlElement.setAttribute('data-bs-theme', 'dark');
+                    document.body.classList.add('bg-dark');
+                } else if (theme === 'light') {
+                    htmlElement.setAttribute('data-bs-theme', 'light');
+                    document.body.classList.remove('bg-dark');
+                } else if (theme === 'auto') {
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    if (prefersDark) {
+                        htmlElement.setAttribute('data-bs-theme', 'dark');
+                        document.body.classList.add('bg-dark');
+                    } else {
+                        htmlElement.setAttribute('data-bs-theme', 'light');
+                        document.body.classList.remove('bg-dark');
+                    }
+                }
+            }
+            applyTheme(savedTheme);
+        })();
+    </script>
 </head>
 
 <body>
@@ -130,102 +156,212 @@
                     <section class="col-md-8 col-lg-9" id="settings-content">
                         <!-- Sections: only one visible at a time -->
                         <div data-section="profile">
-                            <h5>Profile Settings</h5>
-                            <div class="d-flex flex-column align-items-center mb-4">
-                                <div id="profile-pic-wrapper" class="skeleton-circle">
-                                    <img id="settings-profile-avatar" src="" alt="Profile Picture"
-                                        class="rounded-circle mb-2 profile-pic" width="100" height="100" />
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-1">Profile Settings</h5>
+                                    <p class="text-muted mb-4">Manage your profile information and avatar.</p>
+
+                                    <div class="d-flex flex-column align-items-center mb-4">
+                                        <div id="profile-pic-wrapper" class="skeleton-circle mb-3">
+                                            <img id="settings-profile-avatar" src="" alt="Profile Picture"
+                                                class="rounded-circle profile-pic shadow" width="120" height="120"
+                                                style="object-fit: cover; border: 4px solid var(--bs-primary);" />
+                                        </div>
+
+                                        <button class="btn btn-outline-primary btn-sm" id="change-picture-btn">
+                                            <i class="bi bi-camera me-2"></i>Change Picture
+                                        </button>
+                                        <input type="file" id="profile-pic-input" accept="image/*"
+                                            style="display:none" />
+                                    </div>
+
+                                    <form id="profile-settings-form" class="w-100"
+                                        style="max-width: 500px; margin: 0 auto;">
+                                        <div class="mb-3">
+                                            <label for="profile-username" class="form-label fw-semibold">
+                                                <i class="bi bi-at me-2"></i>Username
+                                            </label>
+                                            <div id="username-input-wrapper" class="skeleton skeleton-text"
+                                                style="width: 100%; height: 38px; border-radius: 6px;">
+                                                <input type="text" class="form-control" id="profile-username"
+                                                    placeholder="Enter your username" style="display: none;">
+                                            </div>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="profile-name" class="form-label fw-semibold">
+                                                <i class="bi bi-person me-2"></i>Display Name
+                                            </label>
+                                            <div id="name-input-wrapper" class="skeleton skeleton-text"
+                                                style="width: 100%; height: 38px; border-radius: 6px;">
+                                                <input type="text" class="form-control" id="profile-name"
+                                                    placeholder="Enter your display name" style="display: none;">
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                                            <i class="bi bi-check-circle me-2"></i>Save Profile
+                                        </button>
+                                    </form>
                                 </div>
-
-
-                                <button class="btn btn-outline-secondary btn-sm mb-3" id="change-picture-btn">Change
-                                    Picture</button>
-                                <input type="file" id="profile-pic-input" accept="image/*" style="display:none" />
-
                             </div>
-                            <form id="profile-settings-form" class="w-100" style="max-width: 400px; margin: 0 auto;">
-
-                                <div class="mb-3">
-                                    <label for="profile-username" class="form-label">Username</label>
-                                    <div id="username-input-wrapper" class="skeleton skeleton-text"
-                                        style="width: 100%; height: 38px; border-radius: 6px;">
-                                        <input type="text" class="form-control" id="profile-username"
-                                            placeholder="Enter your username" style="display: none;">
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="profile-name" class="form-label">Name</label>
-                                    <div id="name-input-wrapper" class="skeleton skeleton-text"
-                                        style="width: 100%; height: 38px; border-radius: 6px;">
-                                        <input type="text" class="form-control" id="profile-name"
-                                            placeholder="Enter your name" style="display: none;">
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100">Save</button>
-                            </form>
                         </div>
                         <div data-section="units" class="d-none">
-                            <h5>Units Preferences</h5>
-                            <p>Set your preferred measurement units for weights and measurements.</p>
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-1">Units Preferences</h5>
+                                    <p class="text-muted mb-4">Set your preferred measurement units for weights and
+                                        measurements.</p>
 
-                            <form id="units-settings-form" class="w-100" style="max-width: 400px;">
-                                <div class="mb-4">
-                                    <label class="form-label fw-bold">Weight Unit</label>
-                                    <div id="weight-unit-wrapper" class="skeleton skeleton-text"
-                                        style="width: 100%; height: 80px; border-radius: 6px;">
-                                        <div id="weight-unit-options" style="display: none;">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="weight-unit"
-                                                    id="weight-kg" value="kg">
-                                                <label class="form-check-label" for="weight-kg">
-                                                    Kilograms (kg)
-                                                </label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="weight-unit"
-                                                    id="weight-lbs" value="lbs">
-                                                <label class="form-check-label" for="weight-lbs">
-                                                    Pounds (lbs)
-                                                </label>
+                                    <form id="units-settings-form" class="w-100" style="max-width: 500px;">
+                                        <div class="mb-4">
+                                            <label class="form-label d-block mb-3 fw-semibold">Weight Unit</label>
+                                            <div id="weight-unit-wrapper" class="skeleton skeleton-text"
+                                                style="width: 100%; height: 48px; border-radius: 6px;">
+                                                <div id="weight-unit-options" class="btn-group w-100" role="group"
+                                                    aria-label="Weight unit" style="display: none;">
+                                                    <input type="radio" class="btn-check" name="weight-unit"
+                                                        id="settings-weight-kg" value="kg" autocomplete="off">
+                                                    <label class="btn btn-outline-primary" for="settings-weight-kg">
+                                                        <i class="bi bi-speedometer2 me-2"></i>Kilograms (kg)
+                                                    </label>
+                                                    <input type="radio" class="btn-check" name="weight-unit"
+                                                        id="settings-weight-lbs" value="lbs" autocomplete="off">
+                                                    <label class="btn btn-outline-primary" for="settings-weight-lbs">
+                                                        <i class="bi bi-speedometer me-2"></i>Pounds (lbs)
+                                                    </label>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
 
-                                <div class="mb-4">
-                                    <label class="form-label fw-bold">Measurement Unit</label>
-                                    <div id="measurement-unit-wrapper" class="skeleton skeleton-text"
-                                        style="width: 100%; height: 80px; border-radius: 6px;">
-                                        <div id="measurement-unit-options" style="display: none;">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="measurement-unit"
-                                                    id="measurement-cm" value="cm">
-                                                <label class="form-check-label" for="measurement-cm">
-                                                    Centimeters (cm)
-                                                </label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="measurement-unit"
-                                                    id="measurement-in" value="in">
-                                                <label class="form-check-label" for="measurement-in">
-                                                    Inches (in)
-                                                </label>
+                                        <div class="mb-4">
+                                            <label class="form-label d-block mb-3 fw-semibold">Measurement Unit</label>
+                                            <div id="measurement-unit-wrapper" class="skeleton skeleton-text"
+                                                style="width: 100%; height: 48px; border-radius: 6px;">
+                                                <div id="measurement-unit-options" class="btn-group w-100" role="group"
+                                                    aria-label="Measurement unit" style="display: none;">
+                                                    <input type="radio" class="btn-check" name="measurement-unit"
+                                                        id="settings-measurement-cm" value="cm" autocomplete="off">
+                                                    <label class="btn btn-outline-primary"
+                                                        for="settings-measurement-cm">
+                                                        <i class="bi bi-rulers me-2"></i>Centimeters (cm)
+                                                    </label>
+                                                    <input type="radio" class="btn-check" name="measurement-unit"
+                                                        id="settings-measurement-in" value="in" autocomplete="off">
+                                                    <label class="btn btn-outline-primary"
+                                                        for="settings-measurement-in">
+                                                        <i class="bi bi-ruler me-2"></i>Inches (in)
+                                                    </label>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
 
-                                <button type="submit" class="btn btn-primary w-100">Save Units</button>
-                            </form>
+                                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                                            <i class="bi bi-check-circle me-2"></i>Save Units
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                         <div data-section="theme" class="d-none">
-                            <h5>Theme Settings</h5>
-                            <p>Choose your preferred color theme.</p>
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-1">Theme Settings</h5>
+                                    <p class="text-muted mb-4">Choose your preferred color theme for the application.
+                                    </p>
+
+                                    <form id="theme-settings-form" class="w-100" style="max-width: 500px;">
+                                        <div class="mb-4">
+                                            <label class="form-label d-block mb-3 fw-semibold">Color Theme</label>
+                                            <div class="btn-group w-100" role="group" aria-label="Theme selection">
+                                                <input type="radio" class="btn-check" name="theme" id="theme-light"
+                                                    value="light" autocomplete="off" checked>
+                                                <label class="btn btn-outline-warning" for="theme-light">
+                                                    <i class="bi bi-sun-fill me-2"></i>Light Mode
+                                                </label>
+                                                <input type="radio" class="btn-check" name="theme" id="theme-dark"
+                                                    value="dark" autocomplete="off">
+                                                <label class="btn btn-outline-secondary" for="theme-dark">
+                                                    <i class="bi bi-moon-fill me-2"></i>Dark Mode
+                                                </label>
+                                                <input type="radio" class="btn-check" name="theme" id="theme-auto"
+                                                    value="auto" autocomplete="off">
+                                                <label class="btn btn-outline-info" for="theme-auto">
+                                                    <i class="bi bi-circle-half me-2"></i>Auto
+                                                </label>
+                                            </div>
+                                            <div class="form-text mt-2">
+                                                <small class="text-muted">Auto mode will follow your system
+                                                    preference</small>
+                                            </div>
+                                        </div>
+
+                                        <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+                                            <i class="bi bi-info-circle-fill me-3"></i>
+                                            <div>
+                                                <strong>Preview:</strong> Theme changes will be applied immediately to
+                                                give you a preview of your selection.
+                                            </div>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                                            <i class="bi bi-palette me-2"></i>Save Theme
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                         <div data-section="export" class="d-none">
-                            <h5>Export Your Data</h5>
-                            <p>Download a copy of your data from our platform.</p>
-                            <button id="download-data-btn" class="btn btn-primary">Download My Data</button>
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-1">Export Your Data</h5>
+                                    <p class="text-muted mb-4">Download a copy of all your data from ProgressPal.</p>
+
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-6">
+                                            <div class="card border-primary h-100">
+                                                <div class="card-body text-center">
+                                                    <i class="bi bi-file-earmark-text text-primary mb-3"
+                                                        style="font-size: 2rem;"></i>
+                                                    <h6 class="card-title">JSON Format</h6>
+                                                    <p class="card-text small text-muted">Complete data export including
+                                                        all months, images, and settings</p>
+                                                    <button id="download-json-btn"
+                                                        class="btn btn-outline-primary btn-sm">
+                                                        <i class="bi bi-download me-2"></i>Download JSON
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card border-success h-100">
+                                                <div class="card-body text-center">
+                                                    <i class="bi bi-file-earmark-spreadsheet text-success mb-3"
+                                                        style="font-size: 2rem;"></i>
+                                                    <h6 class="card-title">CSV Format</h6>
+                                                    <p class="card-text small text-muted">Simplified data export for
+                                                        spreadsheet analysis</p>
+                                                    <button id="download-csv-btn"
+                                                        class="btn btn-outline-success btn-sm">
+                                                        <i class="bi bi-download me-2"></i>Download CSV
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-info d-flex align-items-start" role="alert">
+                                        <i class="bi bi-info-circle-fill me-3 mt-1"></i>
+                                        <div>
+                                            <strong>What's included:</strong>
+                                            <ul class="mb-0 mt-2 small">
+                                                <li>All your monthly progress entries</li>
+                                                <li>Profile information and settings</li>
+                                                <li>Image URLs and metadata</li>
+                                                <li>Weight and measurement data</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                     </section>
