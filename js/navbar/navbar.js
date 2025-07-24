@@ -202,14 +202,7 @@ onAuthStateChanged(auth, async (user) => {
         followingCountSpan.classList.remove("skeleton", "skeleton-text");
     }
 
-    // Handle months count (you can replace this with actual data loading logic)
-    if (monthsCountSpan && monthsWrapper) {
-        // For now, just remove skeleton after a short delay since we don't have months data
-        setTimeout(() => {
-            monthsCountSpan.style.display = "inline";
-            monthsCountSpan.textContent = "0"; // Replace with actual months data
-            monthsWrapper.classList.remove("skeleton", "skeleton-text");
-        }, 500);
-    }
+    // Months count is handled by the specific page (months.js, etc.)
+    // No need to handle it here as each page will update it appropriately
 });
 

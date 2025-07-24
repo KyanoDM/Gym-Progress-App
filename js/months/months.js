@@ -51,8 +51,8 @@ async function loadUserMonths(userId) {
         const monthsContainer = document.querySelector('.months-row');
         if (!monthsContainer) return;
 
-        // Show loading state
-        monthsContainer.innerHTML = '<div class="text-center p-4"><i class="bi bi-hourglass-split"></i> Loading months...</div>';
+        // Show skeleton loading cards
+        showSkeletonCards(monthsContainer);
 
         console.log("Current user ID:", userId);
 
@@ -93,7 +93,7 @@ async function loadUserMonths(userId) {
             return bMonth - aMonth;
         });
 
-        // Clear loading state
+        // Clear loading state (skeleton cards)
         monthsContainer.innerHTML = '';
 
         if (months.length === 0) {
@@ -118,6 +118,9 @@ async function loadUserMonths(userId) {
                 });
             }
 
+            // Update sidebar months count to 0
+            updateSidebarMonthsCount(0);
+
             return;
         }
 
@@ -132,6 +135,9 @@ async function loadUserMonths(userId) {
             const monthCard = createMonthCard(month);
             monthsContainer.appendChild(monthCard);
         });
+
+        // Update sidebar months count
+        updateSidebarMonthsCount(months.length);
 
         // Set up toggle functionality after cards are created
         setupDetailsToggle();
@@ -152,6 +158,58 @@ async function loadUserMonths(userId) {
             `;
         }
     }
+}
+
+function showSkeletonCards(container) {
+    // Clear any existing content
+    container.innerHTML = '';
+
+    // Create 3 skeleton cards to simulate loading
+    for (let i = 0; i < 3; i++) {
+        const skeletonCard = createSkeletonCard();
+        container.appendChild(skeletonCard);
+    }
+}
+
+function createSkeletonCard() {
+    const monthCol = document.createElement('div');
+    monthCol.className = 'months-col skeleton-card';
+
+    monthCol.innerHTML = `
+        <div class="card h-100 shadow-sm month-card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-calendar3 me-2"></i>
+                    <span class="skeleton skeleton-text d-inline-block" style="width: 120px; height: 20px; background: rgba(255,255,255,0.3);"></span>
+                </h6>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="skeleton skeleton-circle" style="width: 24px; height: 24px; background: rgba(255,255,255,0.3);"></div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="position-relative">
+                    <div class="skeleton" style="height: 320px;"></div>
+                </div>
+                <div class="p-3">
+                    <div class="skeleton skeleton-text mb-2" style="width: 100%; height: 16px;"></div>
+                    <div class="skeleton skeleton-text mb-2" style="width: 80%; height: 16px;"></div>
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        <div class="skeleton skeleton-text" style="width: 60px; height: 20px; border-radius: 12px;"></div>
+                        <div class="skeleton skeleton-text" style="width: 80px; height: 20px; border-radius: 12px;"></div>
+                        <div class="skeleton skeleton-text" style="width: 50px; height: 20px; border-radius: 12px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="skeleton skeleton-text" style="width: 60px; height: 32px; border-radius: 4px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 80px; height: 16px;"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    return monthCol;
 }
 
 function createMonthCard(month) {
@@ -216,9 +274,11 @@ function createMonthCard(month) {
             </div>
             <div class="card-body p-0">
                 <div class="position-relative">
+                    <div class="image-skeleton skeleton" style="height: 320px; display: block;"></div>
                     <img src="${coverImage}" class="card-img-top" alt="${monthName} Progress" 
-                         style="height: 150px; object-fit: cover;" 
-                         onerror="this.src='Image/img.jpg'">
+                         style="height: 320px; object-fit: cover; display: none;" 
+                         onerror="this.src='Image/img.jpg'"
+                         onload="handleImageLoad(this)">
                 </div>
                 <div class="p-3">
                     <p class="card-text small mb-2">
@@ -247,6 +307,29 @@ function createMonthCard(month) {
     setupMonthCardEvents(monthCol, month);
 
     return monthCol;
+}
+
+function handleImageLoad(img) {
+    // Hide skeleton and show image
+    const skeleton = img.parentElement.querySelector('.image-skeleton');
+    if (skeleton) {
+        skeleton.style.display = 'none';
+    }
+    img.style.display = 'block';
+}
+
+// Make handleImageLoad globally accessible
+window.handleImageLoad = handleImageLoad;
+
+function updateSidebarMonthsCount(count) {
+    const monthsCountSpan = document.querySelector("#sidebar-months");
+    const monthsWrapper = document.querySelector("#sidebar-months-wrapper");
+
+    if (monthsCountSpan && monthsWrapper) {
+        monthsCountSpan.style.display = "inline";
+        monthsCountSpan.textContent = count;
+        monthsWrapper.classList.remove("skeleton", "skeleton-text");
+    }
 }
 
 function createAddMonthCard() {
@@ -313,6 +396,10 @@ async function openEditMonthModal(month) {
     window.isEditMode = true;
     window.editingMonthId = month.id;
     window.editingMonthData = month;
+    window.imagesToDelete = []; // Initialize empty array for tracking images to delete
+    window.selectedFiles = []; // Initialize empty array for new file selections
+    window.selectedCoverImage = month.coverURL; // Initialize with current cover image
+    window.selectedNewCoverIndex = 0; // Initialize cover index for new uploads
 
     // Open the modal
     const modal = new bootstrap.Modal(document.getElementById('addMonthModal'));
@@ -418,6 +505,9 @@ function showExistingImages(imageUrls, coverURL) {
 
     if (!imagePreview || !imagePreviewContainer) return;
 
+    // Initialize the selected cover image
+    window.selectedCoverImage = coverURL;
+
     // Show the image preview section
     imagePreview.style.display = 'block';
 
@@ -428,42 +518,143 @@ function showExistingImages(imageUrls, coverURL) {
     const previewContainer = document.createElement('div');
     previewContainer.className = 'd-flex flex-wrap gap-2';
 
+    // Show skeleton placeholders first
     imageUrls.forEach((imageUrl, index) => {
-        const isCover = imageUrl === coverURL;
+        const skeletonItem = document.createElement('div');
+        skeletonItem.className = 'image-preview-item position-relative skeleton-existing-item';
+        skeletonItem.style.cssText = 'width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 2px solid #dee2e6;';
 
-        const imagePreviewItem = document.createElement('div');
-        imagePreviewItem.className = 'image-preview-item position-relative';
-        imagePreviewItem.style.cssText = 'width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 2px solid #dee2e6;';
+        const skeleton = document.createElement('div');
+        skeleton.className = 'skeleton';
+        skeleton.style.cssText = 'width: 100%; height: 100%;';
 
-        imagePreviewItem.innerHTML = `
-            <img src="${imageUrl}" alt="Month image" style="width: 100%; height: 100%; object-fit: cover;">
-            <button type="button" class="remove-existing-image position-absolute" 
-                    style="top: 5px; right: 5px; background: rgba(220, 53, 69, 0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px;"
-                    data-image-url="${imageUrl}">
-                <i class="bi bi-x"></i>
-            </button>
-            ${isCover ? '<span class="badge bg-primary position-absolute" style="top: 5px; left: 5px; font-size: 0.65rem;">Cover</span>' : ''}
-        `;
-
-        // Add remove functionality for existing images
-        const removeBtn = imagePreviewItem.querySelector('.remove-existing-image');
-        removeBtn.addEventListener('click', () => {
-            if (!window.imagesToDelete) {
-                window.imagesToDelete = [];
-            }
-            window.imagesToDelete.push(imageUrl);
-            imagePreviewItem.remove();
-
-            // If all images are removed, hide the preview
-            if (previewContainer.children.length === 0) {
-                imagePreview.style.display = 'none';
-            }
-        });
-
-        previewContainer.appendChild(imagePreviewItem);
+        skeletonItem.appendChild(skeleton);
+        previewContainer.appendChild(skeletonItem);
     });
 
     imagePreviewContainer.appendChild(previewContainer);
+
+    // Load actual images and replace skeletons
+    imageUrls.forEach((imageUrl, index) => {
+        const isCover = imageUrl === coverURL;
+
+        const img = new Image();
+        img.onload = () => {
+            // Find and replace the corresponding skeleton
+            const skeletonItems = previewContainer.querySelectorAll('.skeleton-existing-item');
+            if (skeletonItems[index]) {
+                const imagePreviewItem = document.createElement('div');
+                imagePreviewItem.className = 'image-preview-item position-relative';
+                imagePreviewItem.style.cssText = 'width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 2px solid #dee2e6;';
+
+                imagePreviewItem.innerHTML = `
+                    <img src="${imageUrl}" alt="Month image" style="width: 100%; height: 100%; object-fit: cover;">
+                    <button type="button" class="remove-existing-image position-absolute" 
+                            style="top: 5px; right: 5px; background: rgba(220, 53, 69, 0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px;"
+                            data-image-url="${imageUrl}">
+                        <i class="bi bi-x"></i>
+                    </button>
+                    ${isCover ?
+                        '<span class="badge bg-primary position-absolute" style="top: 5px; left: 5px; font-size: 0.65rem;">Cover</span>' :
+                        `<button type="button" class="set-cover-btn position-absolute" 
+                                 style="bottom: 5px; left: 5px; background: rgba(0, 123, 255, 0.9); color: white; border: none; border-radius: 12px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer;"
+                                 data-image-url="${imageUrl}">
+                            Set as Cover
+                        </button>`
+                    }
+                `;
+
+                // Add remove functionality for existing images
+                const removeBtn = imagePreviewItem.querySelector('.remove-existing-image');
+                removeBtn.addEventListener('click', () => {
+                    if (!window.imagesToDelete) {
+                        window.imagesToDelete = [];
+                    }
+                    window.imagesToDelete.push(imageUrl);
+                    imagePreviewItem.remove();
+
+                    // If this was the cover image, clear the cover selection
+                    if (imageUrl === window.selectedCoverImage) {
+                        window.selectedCoverImage = null;
+                    }
+
+                    // If all images are removed, hide the preview
+                    if (previewContainer.children.length === 0) {
+                        imagePreview.style.display = 'none';
+                    }
+                });
+
+                // Add set cover functionality
+                const setCoverBtn = imagePreviewItem.querySelector('.set-cover-btn');
+                if (setCoverBtn) {
+                    setCoverBtn.addEventListener('click', () => {
+                        // Set this image as the new cover
+                        window.selectedCoverImage = imageUrl;
+
+                        // Update all images in the preview to reflect the new cover
+                        updateCoverImageDisplay(previewContainer, imageUrl);
+                    });
+                }
+
+                // Replace skeleton with actual image
+                previewContainer.replaceChild(imagePreviewItem, skeletonItems[index]);
+            }
+        };
+        img.onerror = () => {
+            // If image fails to load, still replace skeleton with a placeholder
+            const skeletonItems = previewContainer.querySelectorAll('.skeleton-existing-item');
+            if (skeletonItems[index]) {
+                const errorItem = document.createElement('div');
+                errorItem.className = 'image-preview-item position-relative';
+                errorItem.style.cssText = 'width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 2px solid #dee2e6; display: flex; align-items: center; justify-content: center; background: #f8f9fa;';
+                errorItem.innerHTML = '<i class="bi bi-image text-muted" style="font-size: 2rem;"></i>';
+                previewContainer.replaceChild(errorItem, skeletonItems[index]);
+            }
+        };
+        img.src = imageUrl;
+    });
+}
+
+// Function to update the cover image display
+function updateCoverImageDisplay(container, newCoverUrl) {
+    const imageItems = container.querySelectorAll('.image-preview-item');
+
+    imageItems.forEach(item => {
+        const img = item.querySelector('img');
+        const imageUrl = img.src;
+
+        // Remove existing cover badge and set cover button
+        const existingBadge = item.querySelector('.badge');
+        const existingBtn = item.querySelector('.set-cover-btn');
+
+        if (existingBadge) existingBadge.remove();
+        if (existingBtn) existingBtn.remove();
+
+        // Add appropriate element based on whether this is the cover image
+        if (imageUrl === newCoverUrl) {
+            // This is the new cover image - add cover badge
+            const coverBadge = document.createElement('span');
+            coverBadge.className = 'badge bg-primary position-absolute';
+            coverBadge.style.cssText = 'top: 5px; left: 5px; font-size: 0.65rem;';
+            coverBadge.textContent = 'Cover';
+            item.appendChild(coverBadge);
+        } else {
+            // This is not the cover image - add set cover button
+            const setCoverBtn = document.createElement('button');
+            setCoverBtn.className = 'set-cover-btn position-absolute';
+            setCoverBtn.style.cssText = 'bottom: 5px; left: 5px; background: rgba(0, 123, 255, 0.9); color: white; border: none; border-radius: 12px; padding: 2px 6px; font-size: 0.65rem; cursor: pointer;';
+            setCoverBtn.textContent = 'Set as Cover';
+            setCoverBtn.setAttribute('data-image-url', imageUrl);
+
+            // Add click event listener
+            setCoverBtn.addEventListener('click', () => {
+                window.selectedCoverImage = imageUrl;
+                updateCoverImageDisplay(container, imageUrl);
+            });
+
+            item.appendChild(setCoverBtn);
+        }
+    });
 }
 
 async function openViewMonthModal(month) {
@@ -517,19 +708,51 @@ function populateViewModal(month) {
         gymVisitsContainer.style.display = 'none';
     }
 
-    // Update description
-    const descriptionElement = document.getElementById('viewDescription');
-    descriptionElement.textContent = month.description || 'No description provided for this month.';
+    // Show skeleton for description and notes initially
+    showTextSkeleton();
 
-    // Update notes
-    const notesElement = document.getElementById('viewNotes');
-    notesElement.textContent = month.notes || 'No notes added for this month.';
-
-    // Load images
+    // Load images with skeleton loading
     loadViewImages(month);
 
-    // Load video
+    // Load video with skeleton loading
     loadViewVideo(month);
+
+    // Update description and notes after a brief delay to show skeleton effect
+    setTimeout(() => {
+        updateTextContent(month);
+    }, 300);
+}
+
+function showTextSkeleton() {
+    const descriptionElement = document.getElementById('viewDescription');
+    const notesElement = document.getElementById('viewNotes');
+
+    // Add skeleton classes and placeholder content
+    descriptionElement.className = 'text-muted mb-0 skeleton skeleton-text';
+    descriptionElement.style.width = '100%';
+    descriptionElement.style.height = '20px';
+    descriptionElement.textContent = '';
+
+    notesElement.className = 'mb-0 text-muted skeleton skeleton-text';
+    notesElement.style.width = '100%';
+    notesElement.style.height = '20px';
+    notesElement.textContent = '';
+}
+
+function updateTextContent(month) {
+    const descriptionElement = document.getElementById('viewDescription');
+    const notesElement = document.getElementById('viewNotes');
+
+    // Remove skeleton classes and update content
+    descriptionElement.className = 'text-muted mb-0';
+    descriptionElement.style.width = 'auto';
+    descriptionElement.style.height = 'auto';
+    descriptionElement.textContent = month.description || 'No description provided for this month.';
+
+    notesElement.className = 'mb-0 text-muted';
+    notesElement.style.width = 'auto';
+    notesElement.style.height = 'auto';
+    notesElement.textContent = month.notes || 'No notes added for this month.';
 }
 
 function getEnhancedRatingClass(rating) {
@@ -546,16 +769,45 @@ function loadViewImages(month) {
 
     // Clear existing images
     imageGallery.innerHTML = '';
+    noImagesMessage.style.display = 'none';
 
     if (!month.imageUrls || month.imageUrls.length === 0) {
         noImagesMessage.style.display = 'block';
         return;
     }
 
-    noImagesMessage.style.display = 'none';
+    // Show skeleton images while loading
+    showImageSkeletons(imageGallery, month.imageUrls.length);
 
     // Store images for lightbox
     window.currentViewImages = month.imageUrls;
+
+    // Load actual images after skeleton display
+    setTimeout(() => {
+        loadActualImages(month, imageGallery);
+    }, 500);
+}
+
+function showImageSkeletons(container, count) {
+    container.innerHTML = '';
+
+    for (let i = 0; i < count; i++) {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'col-md-4 col-sm-6 mb-3';
+
+        const skeletonDiv = document.createElement('div');
+        skeletonDiv.className = 'gallery-image skeleton-image';
+        skeletonDiv.innerHTML = `
+            <div class="skeleton" style="width: 100%; height: 250px; border-radius: 8px;"></div>
+        `;
+
+        colDiv.appendChild(skeletonDiv);
+        container.appendChild(colDiv);
+    }
+}
+
+function loadActualImages(month, container) {
+    container.innerHTML = '';
 
     month.imageUrls.forEach((imageUrl, index) => {
         const isCover = imageUrl === month.coverURL;
@@ -567,16 +819,31 @@ function loadViewImages(month) {
         imageDiv.className = `gallery-image ${isCover ? 'cover-image' : ''}`;
         imageDiv.onclick = () => openImageLightbox(index);
 
+        // Add skeleton placeholder initially
+        const skeletonDiv = document.createElement('div');
+        skeletonDiv.className = 'skeleton';
+        skeletonDiv.style.width = '100%';
+        skeletonDiv.style.height = '250px';
+        skeletonDiv.style.borderRadius = '8px';
+        imageDiv.appendChild(skeletonDiv);
+
         const img = document.createElement('img');
         img.src = imageUrl;
         img.alt = `Progress image ${index + 1}`;
+        img.style.display = 'none'; // Hide until loaded
+        img.onload = () => {
+            // Remove skeleton and show image
+            skeletonDiv.remove();
+            img.style.display = 'block';
+        };
         img.onerror = () => {
             img.src = 'Image/img.jpg';
+            // The onload will still fire with the fallback image
         };
 
         imageDiv.appendChild(img);
         colDiv.appendChild(imageDiv);
-        imageGallery.appendChild(colDiv);
+        container.appendChild(colDiv);
     });
 }
 
@@ -590,7 +857,24 @@ function loadViewVideo(month) {
     }
 
     videoSection.style.display = 'block';
-    videoContainer.innerHTML = '';
+
+    // Show skeleton while video loads
+    showVideoSkeleton(videoContainer);
+
+    // Load actual video after skeleton display
+    setTimeout(() => {
+        loadActualVideo(month, videoContainer);
+    }, 400);
+}
+
+function showVideoSkeleton(container) {
+    container.innerHTML = `
+        <div class="skeleton" style="width: 100%; height: 400px; border-radius: 8px;"></div>
+    `;
+}
+
+function loadActualVideo(month, container) {
+    container.innerHTML = '';
 
     if (month.videoUrl.includes('firebasestorage.googleapis.com')) {
         // It's an uploaded video file
@@ -598,9 +882,23 @@ function loadViewVideo(month) {
         video.src = month.videoUrl;
         video.controls = true;
         video.className = 'w-100';
-        video.style.maxHeight = '400px';
+        video.style.maxHeight = '500px';
+        video.style.display = 'none';
 
-        videoContainer.appendChild(video);
+        // Show skeleton initially
+        const skeleton = document.createElement('div');
+        skeleton.className = 'skeleton';
+        skeleton.style.width = '100%';
+        skeleton.style.height = '400px';
+        skeleton.style.borderRadius = '8px';
+        container.appendChild(skeleton);
+
+        video.onloadeddata = () => {
+            skeleton.remove();
+            video.style.display = 'block';
+        };
+
+        container.appendChild(video);
     } else {
         // It's an external URL - try to create an embed
         const embedUrl = getVideoEmbedUrl(month.videoUrl);
@@ -609,13 +907,27 @@ function loadViewVideo(month) {
             const iframe = document.createElement('iframe');
             iframe.src = embedUrl;
             iframe.className = 'w-100';
-            iframe.style.height = '300px';
+            iframe.style.height = '400px';
+            iframe.style.display = 'none';
             iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
             iframe.allowFullscreen = true;
 
-            videoContainer.appendChild(iframe);
+            // Show skeleton initially
+            const skeleton = document.createElement('div');
+            skeleton.className = 'skeleton';
+            skeleton.style.width = '100%';
+            skeleton.style.height = '400px';
+            skeleton.style.borderRadius = '8px';
+            container.appendChild(skeleton);
+
+            iframe.onload = () => {
+                skeleton.remove();
+                iframe.style.display = 'block';
+            };
+
+            container.appendChild(iframe);
         } else {
-            // Fallback: show a link
+            // Fallback: show a link (no skeleton needed for this simple content)
             const linkContainer = document.createElement('div');
             linkContainer.className = 'text-center p-4 bg-light rounded';
             linkContainer.innerHTML = `
@@ -626,7 +938,7 @@ function loadViewVideo(month) {
                 </a>
             `;
 
-            videoContainer.appendChild(linkContainer);
+            container.appendChild(linkContainer);
         }
     }
 }
@@ -886,6 +1198,9 @@ function resetAddMonthForm() {
     window.editingMonthId = null;
     window.editingMonthData = null;
     window.imagesToDelete = [];
+    window.selectedFiles = []; // Reset selected files array
+    window.selectedCoverImage = null;
+    window.selectedNewCoverIndex = 0;
 
     // Reset modal title and button
     const modalTitle = document.getElementById('addMonthModalLabel');
@@ -1141,48 +1456,88 @@ function showImagePreviews(files, container) {
     const previewContainer = document.createElement('div');
     previewContainer.className = 'd-flex flex-wrap gap-2';
 
+    // Show skeleton placeholders first
     Array.from(files).forEach((file, index) => {
         if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const imgContainer = document.createElement('div');
-                imgContainer.className = 'image-preview-item position-relative';
-                imgContainer.style.cssText = 'width: 80px; height: 80px; border: 2px solid #dee2e6; border-radius: 8px; overflow: hidden;';
+            const skeletonContainer = document.createElement('div');
+            skeletonContainer.className = 'image-preview-item position-relative skeleton-preview-item';
+            skeletonContainer.style.cssText = 'width: 80px; height: 80px; border: 2px solid #dee2e6; border-radius: 8px; overflow: hidden;';
 
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
-                img.alt = `Preview ${index + 1}`;
-                img.title = file.name;
+            const skeleton = document.createElement('div');
+            skeleton.className = 'skeleton';
+            skeleton.style.cssText = 'width: 100%; height: 100%;';
 
-                const removeBtn = document.createElement('button');
-                removeBtn.type = 'button';
-                removeBtn.className = 'btn-close position-absolute';
-                removeBtn.style.cssText = 'top: 2px; right: 2px; font-size: 10px; background: rgba(220, 53, 69, 0.9); border-radius: 50%; width: 18px; height: 18px;';
-                removeBtn.setAttribute('aria-label', 'Remove image');
-                removeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    removeImageFromSelection(index);
-                });
-
-                // Add cover badge for first image
-                if (index === 0) {
-                    const coverBadge = document.createElement('span');
-                    coverBadge.className = 'badge bg-primary position-absolute';
-                    coverBadge.style.cssText = 'top: 2px; left: 2px; font-size: 0.6rem;';
-                    coverBadge.textContent = 'Cover';
-                    imgContainer.appendChild(coverBadge);
-                }
-
-                imgContainer.appendChild(img);
-                imgContainer.appendChild(removeBtn);
-                previewContainer.appendChild(imgContainer);
-            };
-            reader.readAsDataURL(file);
+            skeletonContainer.appendChild(skeleton);
+            previewContainer.appendChild(skeletonContainer);
         }
     });
 
     container.appendChild(previewContainer);
+
+    // Load actual images and replace skeletons
+    Array.from(files).forEach((file, index) => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                // Find and replace the corresponding skeleton
+                const skeletonItems = previewContainer.querySelectorAll('.skeleton-preview-item');
+                if (skeletonItems[index]) {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'image-preview-item position-relative';
+                    imgContainer.style.cssText = 'width: 80px; height: 80px; border: 2px solid #dee2e6; border-radius: 8px; overflow: hidden;';
+
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; cursor: pointer;';
+                    img.alt = `Preview ${index + 1}`;
+                    img.title = file.name;
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'btn-close position-absolute';
+                    removeBtn.style.cssText = 'top: 2px; right: 2px; font-size: 10px; background: rgba(220, 53, 69, 0.9); border-radius: 50%; width: 18px; height: 18px;';
+                    removeBtn.setAttribute('aria-label', 'Remove image');
+                    removeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        removeImageFromSelection(index);
+                    });
+
+                    // Add cover badge for first image or set cover button for others
+                    if (index === 0 && !window.selectedNewCoverIndex) {
+                        // First image is cover by default
+                        window.selectedNewCoverIndex = 0;
+                    }
+
+                    if (window.selectedNewCoverIndex === index) {
+                        const coverBadge = document.createElement('span');
+                        coverBadge.className = 'badge bg-primary position-absolute';
+                        coverBadge.style.cssText = 'top: 2px; left: 2px; font-size: 0.6rem;';
+                        coverBadge.textContent = 'Cover';
+                        imgContainer.appendChild(coverBadge);
+                    } else {
+                        const setCoverBtn = document.createElement('button');
+                        setCoverBtn.className = 'set-cover-btn position-absolute';
+                        setCoverBtn.style.cssText = 'bottom: 2px; left: 2px; background: rgba(0, 123, 255, 0.9); color: white; border: none; border-radius: 8px; padding: 1px 4px; font-size: 0.6rem; cursor: pointer;';
+                        setCoverBtn.textContent = 'Set as Cover';
+                        setCoverBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            window.selectedNewCoverIndex = index;
+                            // Re-render to update the display
+                            showImagePreviews(window.selectedFiles, container);
+                        });
+                        imgContainer.appendChild(setCoverBtn);
+                    }
+
+                    imgContainer.appendChild(img);
+                    imgContainer.appendChild(removeBtn);
+
+                    // Replace skeleton with actual image
+                    previewContainer.replaceChild(imgContainer, skeletonItems[index]);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
 }
 
 // Remove image from selection
@@ -1270,7 +1625,12 @@ async function handleAddMonth() {
 
     if (window.selectedFiles && window.selectedFiles.length > 0) {
         imageUrls = await uploadImagesWithProgress(window.selectedFiles, userId, month, year);
-        coverURL = imageUrls[0] || ''; // First image as cover
+        // Use selected cover index or default to first image
+        if (window.selectedNewCoverIndex !== undefined && window.selectedNewCoverIndex < imageUrls.length) {
+            coverURL = imageUrls[window.selectedNewCoverIndex];
+        } else {
+            coverURL = imageUrls[0] || ''; // First image as cover
+        }
     }
 
     // Upload video if provided
@@ -1397,7 +1757,23 @@ async function handleEditMonth() {
     }
 
     const finalImageUrls = [...currentImageUrls, ...newImageUrls];
-    const coverURL = finalImageUrls.length > 0 ? finalImageUrls[0] : '';
+
+    // Determine the cover URL based on user selection or default to first image
+    let coverURL = '';
+    if (finalImageUrls.length > 0) {
+        // If user selected a specific existing cover image and it still exists, use it
+        if (window.selectedCoverImage && finalImageUrls.includes(window.selectedCoverImage)) {
+            coverURL = window.selectedCoverImage;
+        }
+        // If there are new images and user selected a new cover, use it
+        else if (newImageUrls.length > 0 && window.selectedNewCoverIndex !== undefined && window.selectedNewCoverIndex < newImageUrls.length) {
+            coverURL = newImageUrls[window.selectedNewCoverIndex];
+        }
+        // Default to first image if no valid selection
+        else {
+            coverURL = finalImageUrls[0];
+        }
+    }
 
     // Handle video upload/update
     let videoUrl = currentMonthData.videoUrl || '';
