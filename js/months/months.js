@@ -46,9 +46,6 @@ async function loadUserMonths(userId) {
         const monthsContainer = document.querySelector('.months-row');
         if (!monthsContainer) return;
 
-        // Show skeleton loading cards
-        showSkeletonCards(monthsContainer);
-
         // Query user's months from Firestore - simplified query first
         const monthsRef = collection(db, "users", userId, "months");
 
@@ -82,47 +79,24 @@ async function loadUserMonths(userId) {
             return bMonth - aMonth;
         });
 
-        // Clear loading state (skeleton cards)
+        // Only show skeleton cards if we have months to load (avoids flash when empty)
+        if (months.length > 0) {
+            // Show skeleton loading cards
+            showSkeletonCards(monthsContainer);
+        }
+
+        // Clear loading state (skeleton cards) or set initial empty state
         monthsContainer.innerHTML = '';
 
-        if (months.length === 0) {
-            monthsContainer.innerHTML = `
-                <div class="col-12 text-center p-5">
-                    <i class="bi bi-calendar-x" style="font-size: 3rem; color: #6c757d;"></i>
-                    <h5 class="mt-3 text-muted">No months added yet</h5>
-                    <p class="text-muted">Start tracking your progress by adding your first month!</p>
-                    <button class="btn btn-primary mt-3" id="addFirstMonthBtn">
-                        <i class="bi bi-plus me-2"></i>Add Your First Month
-                    </button>
-                </div>
-            `;
+        // Always show the "Add Month" card first (whether 0 months or more)
+        const addMonthCard = createAddMonthCard();
+        monthsContainer.appendChild(addMonthCard);
 
-            // Add event listener to the button
-            const addFirstMonthBtn = document.getElementById('addFirstMonthBtn');
-            if (addFirstMonthBtn) {
-                addFirstMonthBtn.addEventListener('click', () => {
-                    const modal = new bootstrap.Modal(document.getElementById('addMonthModal'));
-                    modal.show();
-                    resetAddMonthForm();
-                });
-            }
-
-            // Update sidebar months count to 0
-            updateSidebarMonthsCount(0);
-
-            return;
-        }
-
-        // Create month cards
-        if (months.length > 0) {
-            // Add "Add Month" card first
-            const addMonthCard = createAddMonthCard();
-            monthsContainer.appendChild(addMonthCard);
-        }
-
+        // If we have months, create cards for them
         months.forEach(month => {
             const monthCard = createMonthCard(month);
             monthsContainer.appendChild(monthCard);
+            setupMonthCardEvents(monthCard, month);
         });
 
         // Update sidebar months count
