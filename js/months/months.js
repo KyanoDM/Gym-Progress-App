@@ -1222,7 +1222,7 @@ function resetAddMonthForm() {
     window.imagesToDelete = [];
     window.selectedFiles = []; // Reset selected files array
     window.selectedCoverImage = null;
-    window.selectedNewCoverIndex = 0;
+    window.selectedNewCoverIndex = undefined; // Reset to undefined instead of 0
 
     // Reset modal title and button
     const modalTitle = document.getElementById('addMonthModalLabel');
@@ -1373,9 +1373,11 @@ function setupAddMonthForm() {
 
             if (files.length > 0) {
                 window.selectedFiles = files;
+                window.selectedNewCoverIndex = undefined; // Reset cover index for new selection
                 showImagePreviews(files, imagePreviewContainer);
             } else {
                 window.selectedFiles = [];
+                window.selectedNewCoverIndex = undefined;
                 hideImagePreview();
             }
         });
@@ -1468,36 +1470,38 @@ function showImagePreviews(files, container) {
     // Create a flex container for small previews
     const previewContainer = document.createElement('div');
     previewContainer.className = 'd-flex flex-wrap gap-2';
+    container.appendChild(previewContainer);
 
-    // Show skeleton placeholders first
+    // Create containers for each image immediately with skeletons
+    const imageContainers = [];
     Array.from(files).forEach((file, index) => {
         if (file.type.startsWith('image/')) {
-            const skeletonContainer = document.createElement('div');
-            skeletonContainer.className = 'image-preview-item position-relative skeleton-preview-item';
-            skeletonContainer.style.cssText = 'width: 80px; height: 80px; border: 2px solid #dee2e6; border-radius: 8px; overflow: hidden;';
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'image-preview-item position-relative';
+            imgContainer.style.cssText = 'width: 80px; height: 80px; border: 2px solid #dee2e6; border-radius: 8px; overflow: hidden;';
+            imgContainer.dataset.imageIndex = index; // Store the index for reference
 
+            // Create skeleton initially
             const skeleton = document.createElement('div');
-            skeleton.className = 'skeleton';
+            skeleton.className = 'skeleton image-skeleton';
             skeleton.style.cssText = 'width: 100%; height: 100%;';
+            imgContainer.appendChild(skeleton);
 
-            skeletonContainer.appendChild(skeleton);
-            previewContainer.appendChild(skeletonContainer);
+            previewContainer.appendChild(imgContainer);
+            imageContainers[index] = imgContainer;
         }
     });
-
-    container.appendChild(previewContainer);
 
     // Load actual images and replace skeletons
     Array.from(files).forEach((file, index) => {
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                // Find and replace the corresponding skeleton
-                const skeletonItems = previewContainer.querySelectorAll('.skeleton-preview-item');
-                if (skeletonItems[index]) {
-                    const imgContainer = document.createElement('div');
-                    imgContainer.className = 'image-preview-item position-relative';
-                    imgContainer.style.cssText = 'width: 80px; height: 80px; border: 2px solid #dee2e6; border-radius: 8px; overflow: hidden;';
+                // Get the specific container for this image
+                const imgContainer = imageContainers[index];
+                if (imgContainer) {
+                    // Clear the container
+                    imgContainer.innerHTML = '';
 
                     const img = document.createElement('img');
                     img.src = e.target.result;
@@ -1516,7 +1520,7 @@ function showImagePreviews(files, container) {
                     });
 
                     // Add cover badge for first image or set cover button for others
-                    if (index === 0 && !window.selectedNewCoverIndex) {
+                    if (index === 0 && window.selectedNewCoverIndex === undefined) {
                         // First image is cover by default
                         window.selectedNewCoverIndex = 0;
                     }
@@ -1543,9 +1547,6 @@ function showImagePreviews(files, container) {
 
                     imgContainer.appendChild(img);
                     imgContainer.appendChild(removeBtn);
-
-                    // Replace skeleton with actual image
-                    previewContainer.replaceChild(imgContainer, skeletonItems[index]);
                 }
             };
             reader.readAsDataURL(file);
@@ -1558,6 +1559,17 @@ function removeImageFromSelection(index) {
     if (window.selectedFiles && window.selectedFiles.length > index) {
         window.selectedFiles.splice(index, 1);
 
+        // Adjust cover index if necessary
+        if (window.selectedNewCoverIndex !== undefined) {
+            if (window.selectedNewCoverIndex === index) {
+                // If the cover image was removed, set the first image as cover
+                window.selectedNewCoverIndex = 0;
+            } else if (window.selectedNewCoverIndex > index) {
+                // If the cover index is after the removed image, decrement it
+                window.selectedNewCoverIndex--;
+            }
+        }
+
         const imagePreviewContainer = document.getElementById('imagePreviewContainer');
         if (window.selectedFiles.length > 0) {
             showImagePreviews(window.selectedFiles, imagePreviewContainer);
@@ -1568,6 +1580,8 @@ function removeImageFromSelection(index) {
             if (imagesInput) {
                 imagesInput.value = '';
             }
+            // Reset cover index
+            window.selectedNewCoverIndex = undefined;
         }
     }
 }
