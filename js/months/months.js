@@ -983,27 +983,57 @@ function setupViewModalActions(month) {
     // Edit button
     const editBtn = document.getElementById('viewModalEditBtn');
     editBtn.onclick = () => {
-        // Close view modal
+        // Close view modal and wait for it to fully close
         const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewMonthModal'));
-        viewModal.hide();
+        const modalElement = document.getElementById('viewMonthModal');
 
-        // Open edit modal
-        setTimeout(() => {
-            openEditMonthModal(month);
-        }, 300);
+        // Listen for the modal to be fully hidden
+        modalElement.addEventListener('hidden.bs.modal', function openEditAfterHidden() {
+            // Remove this event listener to prevent memory leaks
+            modalElement.removeEventListener('hidden.bs.modal', openEditAfterHidden);
+
+            // Ensure backdrop is fully cleaned up
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+
+            // Remove any lingering modal-open class from body
+            document.body.classList.remove('modal-open');
+
+            // Small delay to ensure DOM is clean, then open edit modal
+            setTimeout(() => {
+                openEditMonthModal(month);
+            }, 100);
+        });
+
+        viewModal.hide();
     };
 
     // Delete button
     const deleteBtn = document.getElementById('viewModalDeleteBtn');
     deleteBtn.onclick = async () => {
-        // Close view modal first
+        // Close view modal and wait for it to fully close
         const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewMonthModal'));
-        viewModal.hide();
+        const modalElement = document.getElementById('viewMonthModal');
 
-        // Handle delete after modal is closed
-        setTimeout(async () => {
-            await handleDeleteMonth(month.id, month.month, month.year);
-        }, 300);
+        // Listen for the modal to be fully hidden
+        modalElement.addEventListener('hidden.bs.modal', function deleteAfterHidden() {
+            // Remove this event listener to prevent memory leaks
+            modalElement.removeEventListener('hidden.bs.modal', deleteAfterHidden);
+
+            // Ensure backdrop is fully cleaned up
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+
+            // Remove any lingering modal-open class from body
+            document.body.classList.remove('modal-open');
+
+            // Handle delete after cleanup
+            setTimeout(async () => {
+                await handleDeleteMonth(month.id, month.month, month.year);
+            }, 100);
+        });
+
+        viewModal.hide();
     };
 }
 
