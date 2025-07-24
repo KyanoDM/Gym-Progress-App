@@ -207,13 +207,11 @@ span:not(.skeleton) {
     justify-content: flex-start;
 }
 
-/* Responsive columns that fill width */
+/* Fixed width columns for consistent card sizing */
 .months-col {
-    flex: 1 1 250px;
-    /* Grow and shrink from a 250px base */
-    min-width: 250px;
-    max-width: 350px;
-    /* Prevent cards from getting too wide */
+    flex: 0 0 280px;
+    /* Fixed width - no grow or shrink */
+    width: 280px;
     display: flex;
     margin-bottom: 1.5rem;
 }
