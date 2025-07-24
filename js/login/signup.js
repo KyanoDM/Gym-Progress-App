@@ -81,7 +81,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         window.location.href = "onboarding.html";
                     }
                 })
-                .catch(console.error);
+                .catch(err => {
+                    // Silent error handling
+                });
 
         });
     }

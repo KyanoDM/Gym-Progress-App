@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const avatar = document.querySelector("#user-avatar");
     if (saveWeightBtn) {
         saveWeightBtn.addEventListener("click", async () => {
-            
+
             const weight = parseFloat(weightInput.value);
 
             if (isNaN(weight) || weight <= 0) {
@@ -26,7 +26,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 await setDoc(userRef, { weight }, { merge: true });
                 alert("Weight saved successfully!");
             } catch (err) {
-                console.error(err);
                 alert("Failed to save weight.");
             }
         });

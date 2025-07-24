@@ -37,7 +37,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     window.location.href = "index.html";
                 })
-                .catch(console.error);
+                .catch(err => {
+                    // Silent error handling
+                });
         });
     }
 
@@ -49,9 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            console.log("logged in");
+            // User is logged in
         } else {
-            console.log("logged out");
+            // User is logged out
         }
     });
 });
@@ -80,7 +82,6 @@ if (emailForm) {
 
             window.location.href = "index.html"; // Redirect on success
         } catch (err) {
-            console.log(err.message)
             if (err.message == "Firebase: Error (auth/invalid-credential).") {
                 err.message = "Wrong Credentials";
             }

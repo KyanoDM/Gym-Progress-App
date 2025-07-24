@@ -47,7 +47,6 @@ async function isUsernameTaken(username, currentUserId) {
         }
         return false; // Username is available
     } catch (error) {
-        console.error("Error checking username:", error);
         throw error;
     }
 }
@@ -187,7 +186,7 @@ function loadCurrentUserData() {
                     e.target.value = e.target.value.toLowerCase();
                 });
             } catch (error) {
-                console.error("Error loading user data:", error);
+                // Silent error handling
             }
         }
     });
@@ -238,7 +237,6 @@ function setupChangePicture() {
             msgElem.textContent = "Picture uploaded. Don't forget to click Save to apply changes.";
 
         } catch (error) {
-            console.error("Error uploading profile picture:", error);
             msgElem.textContent = "Failed to upload picture.";
         } finally {
             changeBtn.textContent = "Change Picture";
@@ -286,9 +284,8 @@ function setupProfileForm() {
                         const path = decodeURIComponent(url.pathname.split('/o/')[1].split('?')[0]);
                         const oldPhotoRef = storageRef(storage, path);
                         await deleteObject(oldPhotoRef);
-                        console.log("Old profile picture deleted");
                     } catch (delError) {
-                        console.warn("Failed to delete old profile picture:", delError);
+                        // Silent error handling
                     }
                 }
                 await updateProfile(user, { photoURL: tempUploadedPhotoURL });
@@ -322,7 +319,6 @@ function setupProfileForm() {
                         return;
                     }
                 } catch (error) {
-                    console.error("Error checking username availability:", error);
                     formMsg.textContent = "Error checking username availability. Please try again.";
                     formMsg.className = "text-danger small mt-2 text-center";
                     return;
@@ -358,7 +354,6 @@ function setupProfileForm() {
             formMsg.textContent = "Profile updated successfully!";
             formMsg.className = "text-success small mt-2 text-center";
         } catch (error) {
-            console.error("Error saving profile:", error);
             formMsg.textContent = "Failed to save profile.";
             formMsg.className = "text-danger small mt-2 text-center";
         } finally {
@@ -412,7 +407,6 @@ function setupUnitsForm() {
             unitsMsg.className = "text-success small mt-2 text-center";
 
         } catch (error) {
-            console.error("Error saving units:", error);
             unitsMsg.textContent = "Failed to save units.";
             unitsMsg.className = "text-danger small mt-2 text-center";
         }

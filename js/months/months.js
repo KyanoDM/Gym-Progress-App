@@ -30,17 +30,11 @@ const db = getFirestore(app); document.addEventListener("DOMContentLoaded", () =
 });
 
 function Initialize() {
-    console.log("Initializing months page...");
-
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
-            console.log("No user found, redirecting to login");
             window.location.href = "login.html";
             return;
         }
-
-        console.log("User authenticated:", user.uid);
-        console.log("User email:", user.email);
 
         await loadUserMonths(user.uid);
         setupAddMonthButton();
@@ -55,8 +49,6 @@ async function loadUserMonths(userId) {
         // Show skeleton loading cards
         showSkeletonCards(monthsContainer);
 
-        console.log("Current user ID:", userId);
-
         // Query user's months from Firestore - simplified query first
         const monthsRef = collection(db, "users", userId, "months");
 
@@ -70,12 +62,8 @@ async function loadUserMonths(userId) {
         const months = [];
 
         querySnapshot.forEach((doc) => {
-            console.log("Document data:", doc.data());
             months.push({ id: doc.id, ...doc.data() });
         });
-
-        console.log("Total months found:", months.length);
-        console.log("Months data:", months);
 
         // Sort months manually in JavaScript
         months.sort((a, b) => {
@@ -147,7 +135,6 @@ async function loadUserMonths(userId) {
         setupDetailsToggle();
 
     } catch (error) {
-        console.error("Error loading months:", error);
         const monthsContainer = document.querySelector('.months-row');
         if (monthsContainer) {
             monthsContainer.innerHTML = `
@@ -219,8 +206,6 @@ function createSkeletonCard() {
 function createMonthCard(month) {
     const monthCol = document.createElement('div');
     monthCol.className = 'months-col';
-
-    console.log("Creating card for month:", month);
 
     // Get the cover image - handle different possible data structures
     let coverImage = 'Image/img.jpg'; // fallback image
@@ -344,7 +329,7 @@ async function incrementMonthsCount(userId) {
             'account.monthsCount': increment(1)
         });
     } catch (error) {
-        console.error('Error incrementing months count:', error);
+        // Silent error handling
     }
 }
 
@@ -355,7 +340,7 @@ async function decrementMonthsCount(userId) {
             'account.monthsCount': increment(-1)
         });
     } catch (error) {
-        console.error('Error decrementing months count:', error);
+        // Silent error handling
     }
 }
 
@@ -367,7 +352,7 @@ async function syncMonthsCount(userId, actualCount) {
             'account.monthsCount': actualCount
         });
     } catch (error) {
-        console.error('Error syncing months count:', error);
+        // Silent error handling
     }
 }
 
@@ -697,8 +682,6 @@ function updateCoverImageDisplay(container, newCoverUrl) {
 }
 
 async function openViewMonthModal(month) {
-    console.log('Opening view modal for month:', month);
-
     // Set global view data
     window.currentViewingMonth = month;
 
@@ -1128,9 +1111,8 @@ async function handleDeleteMonth(monthId, monthName, year) {
                     // Extract the storage path from the URL
                     const imageRef = ref(storage, imageUrl);
                     await deleteObject(imageRef);
-                    console.log('Deleted image:', imageUrl);
                 } catch (error) {
-                    console.warn('Failed to delete image:', imageUrl, error);
+                    // Silent error handling
                 }
             });
 
@@ -1148,12 +1130,11 @@ async function handleDeleteMonth(monthId, monthName, year) {
                 if (isFirebaseStorageUrl) {
                     const videoRef = ref(storage, monthData.videoUrl);
                     await deleteObject(videoRef);
-                    console.log('Deleted video:', monthData.videoUrl);
                 } else {
-                    console.log('Skipping video deletion - external URL:', monthData.videoUrl);
+                    // Skip video deletion for external URLs
                 }
             } catch (error) {
-                console.warn('Failed to delete video:', monthData.videoUrl, error);
+                // Silent error handling
             }
         }
 
@@ -1170,7 +1151,6 @@ async function handleDeleteMonth(monthId, monthName, year) {
         showToast(`${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year} deleted successfully!`, 'success');
 
     } catch (error) {
-        console.error("Error deleting month:", error);
         showToast("Error deleting month. Please try again.", 'error');
     }
 }
@@ -1300,25 +1280,17 @@ function resetAddMonthForm() {
     ];
     const currentMonthName = monthNames[currentMonthIndex];
 
-    console.log('Setting default values:', { currentYear, currentMonth: currentMonthName });
-
     if (yearInput) {
         yearInput.value = currentYear;
-        console.log('Set year to:', currentYear);
     }
     if (monthSelect) {
         monthSelect.value = currentMonthName;
-        console.log('Set month to:', currentMonthName, 'Available options:', Array.from(monthSelect.options).map(o => o.value));
-        console.log('Month select value after setting:', monthSelect.value);
 
         // If the current month value didn't stick, try to find and set it
         if (monthSelect.value !== currentMonthName) {
             const monthOption = Array.from(monthSelect.options).find(option => option.value === currentMonthName);
             if (monthOption) {
                 monthOption.selected = true;
-                console.log('Manually selected month option:', currentMonthName);
-            } else {
-                console.warn('Month option not found:', currentMonthName);
             }
         }
     }
@@ -1466,7 +1438,6 @@ function setupAddMonthForm() {
                 await loadUserMonths(auth.currentUser.uid);
 
             } catch (error) {
-                console.error('Error saving month:', error);
                 const action = window.isEditMode ? 'updating' : 'adding';
                 showError(errorDiv, `Error ${action} month: ${error.message}`);
                 showToast(`Error ${action} month: ${error.message}`, 'error');
@@ -1717,8 +1688,6 @@ async function handleAddMonth() {
     await incrementMonthsCount(user.uid);
 
     updateProgress(100, `<div class="progress-step"><i class="bi bi-check-circle me-1"></i>Month added successfully!</div>`);
-
-    console.log('Month added successfully:', monthData);
 }
 
 async function handleEditMonth() {
@@ -1781,9 +1750,8 @@ async function handleEditMonth() {
             try {
                 const imageRef = ref(storage, imageUrl);
                 await deleteObject(imageRef);
-                console.log('Deleted image:', imageUrl);
             } catch (error) {
-                console.warn('Failed to delete image:', imageUrl, error);
+                // Silent error handling
             }
         });
         await Promise.all(deletePromises);
@@ -1831,9 +1799,8 @@ async function handleEditMonth() {
             try {
                 const oldVideoRef = ref(storage, currentMonthData.videoUrl);
                 await deleteObject(oldVideoRef);
-                console.log('Deleted old video');
             } catch (error) {
-                console.warn('Failed to delete old video:', error);
+                // Silent error handling
             }
         }
 
@@ -1849,9 +1816,8 @@ async function handleEditMonth() {
             try {
                 const oldVideoRef = ref(storage, currentMonthData.videoUrl);
                 await deleteObject(oldVideoRef);
-                console.log('Deleted old video file when switching to URL');
             } catch (error) {
-                console.warn('Failed to delete old video:', error);
+                // Silent error handling
             }
         }
 
@@ -1887,7 +1853,6 @@ async function handleEditMonth() {
 
     updateProgress(100, `<div class="progress-step"><i class="bi bi-check-circle me-1"></i>Month updated successfully!</div>`);
 
-    console.log('Month updated successfully:', updatedMonthData);
 }
 
 function showError(errorDiv, message) {
@@ -2021,7 +1986,6 @@ async function uploadImagesWithProgress(files, userId, month, year) {
             updateProgress(completedProgress, `<div class="progress-step"><i class="bi bi-check-circle me-1"></i>Image ${i + 1} uploaded successfully</div>`);
 
         } catch (error) {
-            console.error('Error uploading image:', error);
             throw new Error(`Failed to upload image: ${file.name}`);
         }
     }
@@ -2050,7 +2014,6 @@ async function uploadVideoWithProgress(videoFile, userId, month, year) {
 
         return { url: videoUrl, type: 'upload' };
     } catch (error) {
-        console.error('Error uploading video:', error);
         throw new Error(`Failed to upload video: ${videoFile.name}`);
     }
 }

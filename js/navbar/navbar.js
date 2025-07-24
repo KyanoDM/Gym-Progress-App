@@ -46,7 +46,9 @@ function setupNavigation() {
         sidebarLogoutBtn.addEventListener("click", () => {
             signOut(auth)
                 .then(() => window.location.href = "login.html")
-                .catch(err => console.error("Logout failed:", err));
+                .catch(err => {
+                    // Silent error handling
+                });
         });
     }
 
@@ -93,7 +95,7 @@ async function handleUserSearch(queryText) {
 
         displaySearchResults(users);
     } catch (error) {
-        console.error("Error searching users:", error);
+        // Silent error handling
     }
 }
 

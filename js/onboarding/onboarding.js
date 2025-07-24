@@ -111,7 +111,7 @@ async function saveUserName(userNameInput, termsCheckBox, userNameError, termsEr
     } catch (error) {
         userNameError.textContent = "An error occurred. Please try again.";
         userNameError.style.display = "block";
-        console.error("Firestore error:", error.code, error.message, error);
+        // Silent error handling
     }
 }
 
@@ -146,7 +146,7 @@ async function saveUnits() {
     } catch (error) {
         unitsError.textContent = "An error occurred. Please try again.";
         unitsError.style.display = "block";
-        console.error("Firestore error:", error.code, error.message, error);
+        // Silent error handling
     }
 }
 

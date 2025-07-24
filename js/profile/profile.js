@@ -142,7 +142,7 @@ async function fillProfile(currentUser) {
                             followingCountSpanBottom.textContent = updatedAccountData.followingCount || 0;
 
                     } catch (error) {
-                        console.error("Transaction failed:", error);
+                        // Silent error handling
                     }
                 };
             } else {
