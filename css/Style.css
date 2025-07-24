@@ -427,3 +427,24 @@ span:not(.skeleton) {
     transform: scale(1.1);
     transition: all 0.3s ease;
 }
+
+/* Details Toggle Styling */
+#showDetailsToggle {
+    cursor: pointer;
+}
+
+.form-check-label {
+    cursor: pointer;
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.form-check-label:hover {
+    color: #007bff;
+}
+
+/* Month Details Animation */
+.month-details {
+    transition: all 0.3s ease;
+}
