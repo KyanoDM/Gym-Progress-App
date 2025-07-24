@@ -17,9 +17,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const emailInput = document.querySelector("#email");
     const passwordInput = document.querySelector("#password");
     const signupError = document.querySelector("#signup-error");
-    
 
-  if (signup) {
+
+    if (signup) {
         signup.addEventListener("click", () => {
             signInWithPopup(auth, provider)
                 .then(async (result) => {
@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 displayName: name,
                 photoURL: "Image/img.jpg"
             });
-            
+
 
             // Store user in Firestore
             const userRef = doc(db, "users", user.uid);
@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 preferences: {
                     weightUnit: "kg",
-                    measurementUnit: "cm" 
+                    measurementUnit: "cm"
                 },
                 onboarding: {
                     usernameSet: false,

@@ -69,11 +69,8 @@ function validateUsername(username) {
     const lowerUsername = username.toLowerCase();
 
     // Username validation rules
-    if (lowerUsername.length < 3) {
-        return "Username must be at least 3 characters long.";
-    }
-    if (lowerUsername.length > 20) {
-        return "Username must be no more than 20 characters long.";
+    if (lowerUsername.length < 1) {
+        return "Username must be at least 1 characters long.";
     }
     if (!/^[a-z0-9_]+$/.test(lowerUsername)) {
         return "Username can only contain lowercase letters, numbers, and underscores.";

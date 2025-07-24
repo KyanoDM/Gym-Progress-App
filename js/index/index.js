@@ -16,12 +16,8 @@ import {
 const db = getFirestore(app);
 
 document.addEventListener("DOMContentLoaded", () => {
-    
     checkOnboarding();
-
-  
 });
-
 
 
 function checkOnboarding() {

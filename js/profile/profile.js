@@ -223,8 +223,6 @@ document.addEventListener("DOMContentLoaded", () => {
     onAuthStateChanged(auth, (user) => {
         if (user) {
             fillProfile(user);
-        } else {
-            window.location.href = "login.html";
         }
     });
 });

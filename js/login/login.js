@@ -3,7 +3,7 @@ import {
     getAuth, GoogleAuthProvider, signInWithPopup,
     onAuthStateChanged, signOut, signInWithEmailAndPassword
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
-import { getFirestore, doc, setDoc , getDoc} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -49,9 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
-           console.log("logged in");
+            console.log("logged in");
         } else {
-           console.log("logged out");
+            console.log("logged out");
         }
     });
 });
@@ -82,7 +82,7 @@ if (emailForm) {
         } catch (err) {
             console.log(err.message)
             if (err.message == "Firebase: Error (auth/invalid-credential).") {
-                err.message = "Wrong Credentials";      
+                err.message = "Wrong Credentials";
             }
             loginError.textContent = err.message;
             loginError.style.display = "block";
