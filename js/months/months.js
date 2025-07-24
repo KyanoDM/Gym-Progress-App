@@ -541,22 +541,25 @@ function showExistingImages(imageUrls, coverURL) {
     // Create preview container
     const previewContainer = document.createElement('div');
     previewContainer.className = 'd-flex flex-wrap gap-2';
-
-    // Show skeleton placeholders first
-    imageUrls.forEach((imageUrl, index) => {
-        const skeletonItem = document.createElement('div');
-        skeletonItem.className = 'image-preview-item position-relative skeleton-existing-item';
-        skeletonItem.style.cssText = 'width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 2px solid #dee2e6;';
-
-        const skeleton = document.createElement('div');
-        skeleton.className = 'skeleton';
-        skeleton.style.cssText = 'width: 100%; height: 100%;';
-
-        skeletonItem.appendChild(skeleton);
-        previewContainer.appendChild(skeletonItem);
-    });
-
     imagePreviewContainer.appendChild(previewContainer);
+
+    // Create containers for each image immediately with skeletons
+    const imageContainers = [];
+    imageUrls.forEach((imageUrl, index) => {
+        const imagePreviewItem = document.createElement('div');
+        imagePreviewItem.className = 'image-preview-item position-relative';
+        imagePreviewItem.style.cssText = 'width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 2px solid #dee2e6;';
+        imagePreviewItem.dataset.imageIndex = index; // Store the index for reference
+
+        // Create skeleton initially
+        const skeleton = document.createElement('div');
+        skeleton.className = 'skeleton image-skeleton';
+        skeleton.style.cssText = 'width: 100%; height: 100%;';
+        imagePreviewItem.appendChild(skeleton);
+
+        previewContainer.appendChild(imagePreviewItem);
+        imageContainers[index] = imagePreviewItem;
+    });
 
     // Load actual images and replace skeletons
     imageUrls.forEach((imageUrl, index) => {
@@ -564,14 +567,13 @@ function showExistingImages(imageUrls, coverURL) {
 
         const img = new Image();
         img.onload = () => {
-            // Find and replace the corresponding skeleton
-            const skeletonItems = previewContainer.querySelectorAll('.skeleton-existing-item');
-            if (skeletonItems[index]) {
-                const imagePreviewItem = document.createElement('div');
-                imagePreviewItem.className = 'image-preview-item position-relative';
-                imagePreviewItem.style.cssText = 'width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 2px solid #dee2e6;';
+            // Get the specific container for this image
+            const imgContainer = imageContainers[index];
+            if (imgContainer) {
+                // Clear the container
+                imgContainer.innerHTML = '';
 
-                imagePreviewItem.innerHTML = `
+                imgContainer.innerHTML = `
                     <img src="${imageUrl}" alt="Month image" style="width: 100%; height: 100%; object-fit: cover;">
                     <button type="button" class="remove-existing-image position-absolute" 
                             style="top: 5px; right: 5px; background: rgba(220, 53, 69, 0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px;"
@@ -589,13 +591,13 @@ function showExistingImages(imageUrls, coverURL) {
                 `;
 
                 // Add remove functionality for existing images
-                const removeBtn = imagePreviewItem.querySelector('.remove-existing-image');
+                const removeBtn = imgContainer.querySelector('.remove-existing-image');
                 removeBtn.addEventListener('click', () => {
                     if (!window.imagesToDelete) {
                         window.imagesToDelete = [];
                     }
                     window.imagesToDelete.push(imageUrl);
-                    imagePreviewItem.remove();
+                    imgContainer.remove();
 
                     // If this was the cover image, clear the cover selection
                     if (imageUrl === window.selectedCoverImage) {
@@ -609,7 +611,7 @@ function showExistingImages(imageUrls, coverURL) {
                 });
 
                 // Add set cover functionality
-                const setCoverBtn = imagePreviewItem.querySelector('.set-cover-btn');
+                const setCoverBtn = imgContainer.querySelector('.set-cover-btn');
                 if (setCoverBtn) {
                     setCoverBtn.addEventListener('click', () => {
                         // Set this image as the new cover
@@ -619,20 +621,42 @@ function showExistingImages(imageUrls, coverURL) {
                         updateCoverImageDisplay(previewContainer, imageUrl);
                     });
                 }
-
-                // Replace skeleton with actual image
-                previewContainer.replaceChild(imagePreviewItem, skeletonItems[index]);
             }
         };
         img.onerror = () => {
             // If image fails to load, still replace skeleton with a placeholder
-            const skeletonItems = previewContainer.querySelectorAll('.skeleton-existing-item');
-            if (skeletonItems[index]) {
-                const errorItem = document.createElement('div');
-                errorItem.className = 'image-preview-item position-relative';
-                errorItem.style.cssText = 'width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 2px solid #dee2e6; display: flex; align-items: center; justify-content: center; background: #f8f9fa;';
-                errorItem.innerHTML = '<i class="bi bi-image text-muted" style="font-size: 2rem;"></i>';
-                previewContainer.replaceChild(errorItem, skeletonItems[index]);
+            const imgContainer = imageContainers[index];
+            if (imgContainer) {
+                imgContainer.innerHTML = `
+                    <div style="width: 100%; height: 100%; background: #f8f9fa; display: flex; align-items: center; justify-content: center; color: #6c757d;">
+                        <i class="bi bi-image" style="font-size: 24px;"></i>
+                    </div>
+                    <button type="button" class="remove-existing-image position-absolute" 
+                            style="top: 5px; right: 5px; background: rgba(220, 53, 69, 0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px;"
+                            data-image-url="${imageUrl}">
+                        <i class="bi bi-x"></i>
+                    </button>
+                `;
+
+                // Add remove functionality even for failed images
+                const removeBtn = imgContainer.querySelector('.remove-existing-image');
+                removeBtn.addEventListener('click', () => {
+                    if (!window.imagesToDelete) {
+                        window.imagesToDelete = [];
+                    }
+                    window.imagesToDelete.push(imageUrl);
+                    imgContainer.remove();
+
+                    // If this was the cover image, clear the cover selection
+                    if (imageUrl === window.selectedCoverImage) {
+                        window.selectedCoverImage = null;
+                    }
+
+                    // If all images are removed, hide the preview
+                    if (previewContainer.children.length === 0) {
+                        imagePreview.style.display = 'none';
+                    }
+                });
             }
         };
         img.src = imageUrl;
