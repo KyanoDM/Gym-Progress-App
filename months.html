@@ -43,10 +43,10 @@
                     }
                 }
             }
-            
+
             // Apply theme immediately for html element
             applyTheme(savedTheme);
-            
+
             // Apply body theme when DOM is ready
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', () => applyTheme(savedTheme));
@@ -72,6 +72,11 @@
                 <ul class="nav flex-column px-3">
                     <li class="nav-item mb-2">
                         <a class="nav-link" href="index.html">
+                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item mb-2">
+                        <a class="nav-link" href="feed.html">
                             <i class="bi bi-house-door me-2"></i>Feed
                         </a>
                     </li>
@@ -144,7 +149,8 @@
                 </div>
 
                 <!-- Year Filter -->
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3" id="yearFilterContainer" style="display: none;">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3"
+                    id="yearFilterContainer" style="display: none;">
                     <div class="d-flex align-items-center gap-2">
                         <span class="text-muted fw-bold me-2">Filter by year:</span>
                         <div class="btn-group" role="group" aria-label="Year filter">

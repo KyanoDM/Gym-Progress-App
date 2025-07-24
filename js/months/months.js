@@ -72,7 +72,28 @@ function Initialize() {
         await loadUserMonths(user.uid);
         setupAddMonthButton();
         setupYearFilter();
+
+        // Check for URL parameters to auto-open modals
+        checkUrlParameters();
     });
+}
+
+function checkUrlParameters() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+
+    if (action === 'add') {
+        // Small delay to ensure modal is properly initialized
+        setTimeout(() => {
+            const addMonthModal = new bootstrap.Modal(document.getElementById('addMonthModal'));
+            addMonthModal.show();
+
+            // Clear the URL parameter after opening the modal
+            const url = new URL(window.location);
+            url.searchParams.delete('action');
+            window.history.replaceState({}, '', url);
+        }, 500);
+    }
 }
 
 async function loadUserMonths(userId) {
@@ -223,7 +244,7 @@ function setupYearFilterButtons(months) {
 
     // Get unique years from months and sort them descending
     const years = [...new Set(months.map(month => month.year))].sort((a, b) => b - a);
-    
+
     // Only show year filter if there are multiple years
     if (years.length <= 1) {
         yearFilterContainer.style.display = 'none';
@@ -235,7 +256,7 @@ function setupYearFilterButtons(months) {
 
     // Get the button group container
     const buttonGroup = yearFilterContainer.querySelector('.btn-group');
-    
+
     // Clear existing year buttons (keep "All" button)
     const existingYearButtons = buttonGroup.querySelectorAll('input:not([value="all"]), label:not([for="yearAll"])');
     existingYearButtons.forEach(btn => btn.remove());
@@ -243,7 +264,7 @@ function setupYearFilterButtons(months) {
     // Add year buttons
     years.forEach(year => {
         const inputId = `year${year}`;
-        
+
         // Create radio input
         const input = document.createElement('input');
         input.type = 'radio';
@@ -251,13 +272,13 @@ function setupYearFilterButtons(months) {
         input.name = 'yearFilter';
         input.id = inputId;
         input.value = year.toString();
-        
+
         // Create label
         const label = document.createElement('label');
         label.className = 'btn btn-sm';
         label.setAttribute('for', inputId);
         label.textContent = year.toString();
-        
+
         buttonGroup.appendChild(input);
         buttonGroup.appendChild(label);
     });
@@ -266,7 +287,7 @@ function setupYearFilterButtons(months) {
     const latestYear = years[0]; // First year in the sorted array (descending)
     const latestYearInput = buttonGroup.querySelector(`input[value="${latestYear}"]`);
     const allInput = buttonGroup.querySelector('input[value="all"]');
-    
+
     if (latestYearInput) {
         // Uncheck "All" and check latest year
         allInput.checked = false;
@@ -281,14 +302,14 @@ function setupYearFilterButtons(months) {
 function showDetailsToggleAlone() {
     // Clean up any existing standalone toggle first
     cleanupStandaloneToggle();
-    
+
     // Get the saved preference
     const savedPreference = localStorage.getItem('showMonthDetails');
     const showDetails = savedPreference === 'true';
-    
+
     // Show the toggle outside the year filter when year filter is hidden
     const mainContainer = document.querySelector('.container-fluid.mt-4.px-4.pb-4');
-    
+
     if (mainContainer) {
         // Create standalone toggle container
         const standaloneToggle = document.createElement('div');
@@ -302,7 +323,7 @@ function showDetailsToggleAlone() {
                 </label>
             </div>
         `;
-        
+
         // Insert after the header but before months
         const monthsRow = document.querySelector('.months-row');
         if (monthsRow) {
@@ -348,7 +369,7 @@ function updateSlidingIndicator(selectedValue) {
     // Calculate position and width
     const buttonGroupRect = buttonGroup.getBoundingClientRect();
     const activeLabelRect = activeLabel.getBoundingClientRect();
-    
+
     const relativeLeft = activeLabelRect.left - buttonGroupRect.left;
     const width = activeLabelRect.width;
 
@@ -366,10 +387,10 @@ function setupYearFilter() {
         if (e.target.name === 'yearFilter') {
             const selectedValue = e.target.value;
             currentSelectedYear = selectedValue;
-            
+
             // Update sliding indicator
             updateSlidingIndicator(selectedValue);
-            
+
             // Display filtered months
             displayFilteredMonths();
         }
@@ -1428,9 +1449,9 @@ function setupDetailsToggle() {
     // Check for both regular toggle (inside year filter) and standalone toggle
     const toggle = document.getElementById('showDetailsToggle');
     const standaloneToggle = document.getElementById('showDetailsToggleStandalone');
-    
+
     const activeToggle = toggle || standaloneToggle;
-    
+
     if (!activeToggle) return;
 
     // Restore user's preference from localStorage
@@ -1446,10 +1467,10 @@ function setupDetailsToggle() {
     // Add event listener to the active toggle (remove any existing listeners first)
     const newToggle = activeToggle.cloneNode(true);
     activeToggle.parentNode.replaceChild(newToggle, activeToggle);
-    
+
     newToggle.addEventListener('change', (e) => {
         const showDetails = e.target.checked;
-        
+
         // Apply to all month details
         applyDetailsToggleState();
 
@@ -1463,9 +1484,9 @@ function applyDetailsToggleState() {
     const toggle = document.getElementById('showDetailsToggle');
     const standaloneToggle = document.getElementById('showDetailsToggleStandalone');
     const activeToggle = toggle || standaloneToggle;
-    
+
     if (!activeToggle) return;
-    
+
     const showDetails = activeToggle.checked;
     const monthDetails = document.querySelectorAll('.month-details');
 
