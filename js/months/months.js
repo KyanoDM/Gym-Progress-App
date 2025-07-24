@@ -1685,7 +1685,7 @@ async function handleAddMonth() {
     await addDoc(monthsRef, monthData);
 
     // Increment months counter in user account
-    await incrementMonthsCount(user.uid);
+    await incrementMonthsCount(userId);
 
     updateProgress(100, `<div class="progress-step"><i class="bi bi-check-circle me-1"></i>Month added successfully!</div>`);
 }
