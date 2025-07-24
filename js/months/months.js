@@ -12,6 +12,7 @@ import {
     deleteDoc,
     addDoc,
     getDoc,
+    updateDoc,
     serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 import {
@@ -284,8 +285,7 @@ function setupMonthCardEvents(monthCol, month) {
     viewButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            // TODO: Navigate to month detail page
-            console.log('View month:', month.id);
+            openViewMonthModal(month);
         });
     });
 
@@ -294,8 +294,7 @@ function setupMonthCardEvents(monthCol, month) {
     if (editButton) {
         editButton.addEventListener('click', (e) => {
             e.preventDefault();
-            // TODO: Navigate to edit month page
-            console.log('Edit month:', month.id);
+            openEditMonthModal(month);
         });
     }
 
@@ -308,6 +307,446 @@ function setupMonthCardEvents(monthCol, month) {
         });
     }
 }
+
+async function openEditMonthModal(month) {
+    // Set global edit mode variables
+    window.isEditMode = true;
+    window.editingMonthId = month.id;
+    window.editingMonthData = month;
+
+    // Open the modal
+    const modal = new bootstrap.Modal(document.getElementById('addMonthModal'));
+
+    // Change modal title
+    const modalTitle = document.getElementById('addMonthModalLabel');
+    if (modalTitle) {
+        modalTitle.innerHTML = '<i class="bi bi-pencil me-2"></i>Edit Month';
+    }
+
+    // Change save button text
+    const saveBtn = document.getElementById('saveMonthBtn');
+    if (saveBtn) {
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;" id="saveSpinner"></span><i class="bi bi-pencil me-2"></i>Update Month';
+    }
+
+    // Show modal and populate form when fully shown
+    const modalElement = document.getElementById('addMonthModal');
+    modalElement.addEventListener('shown.bs.modal', function () {
+        populateEditForm(month);
+    }, { once: true });
+
+    modal.show();
+}
+
+function populateEditForm(month) {
+    // Basic Information
+    const monthSelect = document.getElementById('monthSelect');
+    const yearInput = document.getElementById('yearInput');
+    const descriptionInput = document.getElementById('descriptionInput');
+
+    if (monthSelect && month.month) {
+        monthSelect.value = month.month.toLowerCase();
+    }
+    if (yearInput && month.year) {
+        yearInput.value = month.year;
+    }
+    if (descriptionInput && month.description) {
+        descriptionInput.value = month.description;
+        // Update character counter
+        const descriptionCounter = document.getElementById('descriptionCounter');
+        if (descriptionCounter) {
+            const currentLength = month.description.length;
+            descriptionCounter.textContent = currentLength;
+            
+            // Change color if approaching limit
+            if (currentLength > 90) {
+                descriptionCounter.style.color = '#dc3545'; // Red
+            } else if (currentLength > 75) {
+                descriptionCounter.style.color = '#ffc107'; // Yellow
+            } else {
+                descriptionCounter.style.color = '#6c757d'; // Gray
+            }
+        }
+    }
+
+    // Progress Details
+    const weightInput = document.getElementById('weightInput');
+    const gymVisitsInput = document.getElementById('gymVisitsInput');
+    const ratingInput = document.getElementById('ratingInput');
+    const ratingValue = document.getElementById('ratingValue');
+    const notesInput = document.getElementById('notesInput');
+
+    if (weightInput && month.weight) {
+        weightInput.value = month.weight;
+    }
+    if (gymVisitsInput && month.gymVisits) {
+        gymVisitsInput.value = month.gymVisits;
+    }
+    if (ratingInput && month.rating) {
+        ratingInput.value = month.rating;
+        if (ratingValue) {
+            ratingValue.textContent = month.rating;
+        }
+    }
+    if (notesInput && month.notes) {
+        notesInput.value = month.notes;
+    }
+
+    // Video
+    const videoUrlInput = document.getElementById('videoUrlInput');
+    if (videoUrlInput && month.videoUrl && !month.videoUrl.includes('firebasestorage.googleapis.com')) {
+        // Only populate if it's an external URL (not an uploaded file)
+        videoUrlInput.value = month.videoUrl;
+    }
+
+    // Images - show existing images but don't populate file input
+    if (month.imageUrls && month.imageUrls.length > 0) {
+        showExistingImages(month.imageUrls, month.coverURL);
+    }
+
+    // Clear any previous file selections
+    window.selectedFiles = [];
+    const imagesInput = document.getElementById('imagesInput');
+    if (imagesInput) {
+        imagesInput.value = '';
+    }
+}
+
+function showExistingImages(imageUrls, coverURL) {
+    const imagePreview = document.getElementById('imagePreview');
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+
+    if (!imagePreview || !imagePreviewContainer) return;
+
+    // Show the image preview section
+    imagePreview.style.display = 'block';
+
+    // Clear existing previews
+    imagePreviewContainer.innerHTML = '';
+
+    // Create preview container
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'd-flex flex-wrap gap-2';
+
+    imageUrls.forEach((imageUrl, index) => {
+        const isCover = imageUrl === coverURL;
+
+        const imagePreviewItem = document.createElement('div');
+        imagePreviewItem.className = 'image-preview-item position-relative';
+        imagePreviewItem.style.cssText = 'width: 120px; height: 120px; border-radius: 8px; overflow: hidden; border: 2px solid #dee2e6;';
+
+        imagePreviewItem.innerHTML = `
+            <img src="${imageUrl}" alt="Month image" style="width: 100%; height: 100%; object-fit: cover;">
+            <button type="button" class="remove-existing-image position-absolute" 
+                    style="top: 5px; right: 5px; background: rgba(220, 53, 69, 0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px;"
+                    data-image-url="${imageUrl}">
+                <i class="bi bi-x"></i>
+            </button>
+            ${isCover ? '<span class="badge bg-primary position-absolute" style="top: 5px; left: 5px; font-size: 0.65rem;">Cover</span>' : ''}
+        `;
+
+        // Add remove functionality for existing images
+        const removeBtn = imagePreviewItem.querySelector('.remove-existing-image');
+        removeBtn.addEventListener('click', () => {
+            if (!window.imagesToDelete) {
+                window.imagesToDelete = [];
+            }
+            window.imagesToDelete.push(imageUrl);
+            imagePreviewItem.remove();
+
+            // If all images are removed, hide the preview
+            if (previewContainer.children.length === 0) {
+                imagePreview.style.display = 'none';
+            }
+        });
+
+        previewContainer.appendChild(imagePreviewItem);
+    });
+
+    imagePreviewContainer.appendChild(previewContainer);
+}
+
+async function openViewMonthModal(month) {
+    console.log('Opening view modal for month:', month);
+
+    // Set global view data
+    window.currentViewingMonth = month;
+
+    // Open the modal
+    const modal = new bootstrap.Modal(document.getElementById('viewMonthModal'));
+
+    // Populate the modal content
+    populateViewModal(month);
+
+    // Setup modal action buttons
+    setupViewModalActions(month);
+
+    modal.show();
+}
+
+function populateViewModal(month) {
+    // Update title
+    const monthName = month.month ? month.month.charAt(0).toUpperCase() + month.month.slice(1) : 'Unknown';
+    const year = month.year || new Date().getFullYear();
+    document.getElementById('viewMonthTitle').textContent = `${monthName} ${year}`;
+
+    // Update rating with enhanced styling
+    const ratingBadge = document.getElementById('viewRatingBadge');
+    const rating = month.rating || 5;
+    const ratingClass = getEnhancedRatingClass(rating);
+    ratingBadge.className = `badge fs-6 me-2 ${ratingClass}`;
+    ratingBadge.innerHTML = `<i class="bi bi-star-fill me-1"></i>${rating}/10`;
+
+    // Update weight
+    const weightContainer = document.getElementById('viewWeightContainer');
+    const weightSpan = document.getElementById('viewWeight');
+    if (month.weight) {
+        weightSpan.textContent = `${month.weight} kg`;
+        weightContainer.style.display = 'flex';
+    } else {
+        weightContainer.style.display = 'none';
+    }
+
+    // Update gym visits
+    const gymVisitsContainer = document.getElementById('viewGymVisitsContainer');
+    const gymVisitsSpan = document.getElementById('viewGymVisits');
+    if (month.gymVisits) {
+        gymVisitsSpan.textContent = `${month.gymVisits} visits`;
+        gymVisitsContainer.style.display = 'flex';
+    } else {
+        gymVisitsContainer.style.display = 'none';
+    }
+
+    // Update description
+    const descriptionElement = document.getElementById('viewDescription');
+    descriptionElement.textContent = month.description || 'No description provided for this month.';
+
+    // Update notes
+    const notesElement = document.getElementById('viewNotes');
+    notesElement.textContent = month.notes || 'No notes added for this month.';
+
+    // Load images
+    loadViewImages(month);
+
+    // Load video
+    loadViewVideo(month);
+}
+
+function getEnhancedRatingClass(rating) {
+    const value = parseInt(rating);
+    if (value >= 9) return 'rating-badge-excellent';
+    if (value >= 7) return 'rating-badge-good';
+    if (value >= 5) return 'rating-badge-average';
+    return 'rating-badge-poor';
+}
+
+function loadViewImages(month) {
+    const imageGallery = document.getElementById('imageGallery');
+    const noImagesMessage = document.getElementById('noImagesMessage');
+
+    // Clear existing images
+    imageGallery.innerHTML = '';
+
+    if (!month.imageUrls || month.imageUrls.length === 0) {
+        noImagesMessage.style.display = 'block';
+        return;
+    }
+
+    noImagesMessage.style.display = 'none';
+
+    // Store images for lightbox
+    window.currentViewImages = month.imageUrls;
+
+    month.imageUrls.forEach((imageUrl, index) => {
+        const isCover = imageUrl === month.coverURL;
+
+        const colDiv = document.createElement('div');
+        colDiv.className = 'col-md-4 col-sm-6 mb-3';
+
+        const imageDiv = document.createElement('div');
+        imageDiv.className = `gallery-image ${isCover ? 'cover-image' : ''}`;
+        imageDiv.onclick = () => openImageLightbox(index);
+
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = `Progress image ${index + 1}`;
+        img.onerror = () => {
+            img.src = 'Image/img.jpg';
+        };
+
+        imageDiv.appendChild(img);
+        colDiv.appendChild(imageDiv);
+        imageGallery.appendChild(colDiv);
+    });
+}
+
+function loadViewVideo(month) {
+    const videoSection = document.getElementById('videoSection');
+    const videoContainer = document.getElementById('videoContainer');
+
+    if (!month.videoUrl) {
+        videoSection.style.display = 'none';
+        return;
+    }
+
+    videoSection.style.display = 'block';
+    videoContainer.innerHTML = '';
+
+    if (month.videoUrl.includes('firebasestorage.googleapis.com')) {
+        // It's an uploaded video file
+        const video = document.createElement('video');
+        video.src = month.videoUrl;
+        video.controls = true;
+        video.className = 'w-100';
+        video.style.maxHeight = '400px';
+
+        videoContainer.appendChild(video);
+    } else {
+        // It's an external URL - try to create an embed
+        const embedUrl = getVideoEmbedUrl(month.videoUrl);
+
+        if (embedUrl) {
+            const iframe = document.createElement('iframe');
+            iframe.src = embedUrl;
+            iframe.className = 'w-100';
+            iframe.style.height = '300px';
+            iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+            iframe.allowFullscreen = true;
+
+            videoContainer.appendChild(iframe);
+        } else {
+            // Fallback: show a link
+            const linkContainer = document.createElement('div');
+            linkContainer.className = 'text-center p-4 bg-light rounded';
+            linkContainer.innerHTML = `
+                <i class="bi bi-play-circle" style="font-size: 3rem; color: #6c757d;"></i>
+                <p class="mt-2 mb-2">External Video</p>
+                <a href="${month.videoUrl}" target="_blank" class="btn btn-outline-primary">
+                    <i class="bi bi-box-arrow-up-right me-2"></i>Open Video
+                </a>
+            `;
+
+            videoContainer.appendChild(linkContainer);
+        }
+    }
+}
+
+function getVideoEmbedUrl(url) {
+    // YouTube
+    const youtubeMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+    if (youtubeMatch) {
+        return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+    }
+
+    // Vimeo
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+    if (vimeoMatch) {
+        return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+
+    return null;
+}
+
+function setupViewModalActions(month) {
+    // Edit button
+    const editBtn = document.getElementById('viewModalEditBtn');
+    editBtn.onclick = () => {
+        // Close view modal
+        const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewMonthModal'));
+        viewModal.hide();
+
+        // Open edit modal
+        setTimeout(() => {
+            openEditMonthModal(month);
+        }, 300);
+    };
+
+    // Delete button
+    const deleteBtn = document.getElementById('viewModalDeleteBtn');
+    deleteBtn.onclick = async () => {
+        // Close view modal first
+        const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewMonthModal'));
+        viewModal.hide();
+
+        // Handle delete after modal is closed
+        setTimeout(async () => {
+            await handleDeleteMonth(month.id, month.month, month.year);
+        }, 300);
+    };
+}
+
+// Image Lightbox Functions
+function openImageLightbox(index) {
+    if (!window.currentViewImages || window.currentViewImages.length === 0) return;
+
+    window.currentLightboxIndex = index;
+
+    const modal = new bootstrap.Modal(document.getElementById('imageLightboxModal'));
+    updateLightboxImage();
+    setupLightboxNavigation();
+
+    modal.show();
+}
+
+function updateLightboxImage() {
+    const img = document.getElementById('lightboxImage');
+    const counter = document.getElementById('lightboxCounter');
+    const prevBtn = document.getElementById('lightboxPrev');
+    const nextBtn = document.getElementById('lightboxNext');
+
+    const currentIndex = window.currentLightboxIndex;
+    const images = window.currentViewImages;
+
+    img.src = images[currentIndex];
+    counter.textContent = `${currentIndex + 1} of ${images.length}`;
+
+    // Show/hide navigation buttons
+    prevBtn.style.display = currentIndex > 0 ? 'flex' : 'none';
+    nextBtn.style.display = currentIndex < images.length - 1 ? 'flex' : 'none';
+}
+
+function setupLightboxNavigation() {
+    const prevBtn = document.getElementById('lightboxPrev');
+    const nextBtn = document.getElementById('lightboxNext');
+
+    prevBtn.onclick = () => {
+        if (window.currentLightboxIndex > 0) {
+            window.currentLightboxIndex--;
+            updateLightboxImage();
+        }
+    };
+
+    nextBtn.onclick = () => {
+        if (window.currentLightboxIndex < window.currentViewImages.length - 1) {
+            window.currentLightboxIndex++;
+            updateLightboxImage();
+        }
+    };
+
+    // Keyboard navigation
+    document.addEventListener('keydown', handleLightboxKeyboard);
+}
+
+function handleLightboxKeyboard(e) {
+    const modal = document.getElementById('imageLightboxModal');
+    if (!modal.classList.contains('show')) return;
+
+    if (e.key === 'ArrowLeft' && window.currentLightboxIndex > 0) {
+        window.currentLightboxIndex--;
+        updateLightboxImage();
+    } else if (e.key === 'ArrowRight' && window.currentLightboxIndex < window.currentViewImages.length - 1) {
+        window.currentLightboxIndex++;
+        updateLightboxImage();
+    } else if (e.key === 'Escape') {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        modalInstance.hide();
+    }
+}
+
+// Clean up keyboard listener when lightbox is closed
+document.getElementById('imageLightboxModal').addEventListener('hidden.bs.modal', () => {
+    document.removeEventListener('keydown', handleLightboxKeyboard);
+});
 
 async function handleDeleteMonth(monthId, monthName, year) {
     const confirmDelete = confirm(`Are you sure you want to delete ${monthName} ${year}? This action cannot be undone.`);
@@ -386,13 +825,28 @@ function setupDetailsToggle() {
     const toggle = document.getElementById('showDetailsToggle');
     if (!toggle) return;
 
+    // Restore user's preference from localStorage
+    const savedPreference = localStorage.getItem('showMonthDetails');
+    const showDetails = savedPreference === 'true';
+
+    // Set toggle state
+    toggle.checked = showDetails;
+
+    // Apply the preference to existing month details
+    const monthDetails = document.querySelectorAll('.month-details');
+    monthDetails.forEach(detail => {
+        if (showDetails) {
+            detail.classList.remove("d-none");
+        } else {
+            detail.classList.add("d-none");
+        }
+    });
+
     toggle.addEventListener('change', (e) => {
         const showDetails = e.target.checked;
         const monthDetails = document.querySelectorAll('.month-details');
-        console.log(monthDetails + "dddddddddddddddddddddddddddddddddddddddd");
-        console.log("tog");
+
         monthDetails.forEach(detail => {
-            console.log(detail);
             if (showDetails) {
                 detail.classList.remove("d-none");
             } else {
@@ -427,6 +881,23 @@ function setupAddMonthButton() {
 }
 
 function resetAddMonthForm() {
+    // Reset edit mode variables
+    window.isEditMode = false;
+    window.editingMonthId = null;
+    window.editingMonthData = null;
+    window.imagesToDelete = [];
+
+    // Reset modal title and button
+    const modalTitle = document.getElementById('addMonthModalLabel');
+    if (modalTitle) {
+        modalTitle.innerHTML = '<i class="bi bi-calendar-plus me-2"></i>Add New Month';
+    }
+
+    const saveBtn = document.getElementById('saveMonthBtn');
+    if (saveBtn) {
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;" id="saveSpinner"></span><i class="bi bi-plus me-2"></i>Add Month';
+    }
+
     const form = document.getElementById('addMonthForm');
     const imagePreview = document.getElementById('imagePreview');
     const imagePreviewContainer = document.getElementById('imagePreviewContainer');
@@ -447,6 +918,13 @@ function resetAddMonthForm() {
         imagePreviewContainer.innerHTML = '';
     }
     if (errorDiv) errorDiv.style.display = 'none';
+
+    // Reset character counter
+    const descriptionCounter = document.getElementById('descriptionCounter');
+    if (descriptionCounter) {
+        descriptionCounter.textContent = '0';
+        descriptionCounter.style.color = '#6c757d';
+    }
 
     // Reset video inputs state
     if (videoFileInput) videoFileInput.disabled = false;
@@ -524,9 +1002,31 @@ function setupAddMonthForm() {
     const videoUrlInput = document.getElementById('videoUrlInput');
     const ratingInput = document.getElementById('ratingInput');
     const ratingValue = document.getElementById('ratingValue');
+    const descriptionInput = document.getElementById('descriptionInput');
+    const descriptionCounter = document.getElementById('descriptionCounter');
 
     // Initialize selectedFiles array
     window.selectedFiles = [];
+
+    // Handle description character counter
+    if (descriptionInput && descriptionCounter) {
+        // Update counter on page load
+        descriptionCounter.textContent = descriptionInput.value.length;
+        
+        descriptionInput.addEventListener('input', (e) => {
+            const currentLength = e.target.value.length;
+            descriptionCounter.textContent = currentLength;
+            
+            // Change color if approaching limit
+            if (currentLength > 90) {
+                descriptionCounter.style.color = '#dc3545'; // Red
+            } else if (currentLength > 75) {
+                descriptionCounter.style.color = '#ffc107'; // Yellow
+            } else {
+                descriptionCounter.style.color = '#6c757d'; // Gray
+            }
+        });
+    }
 
     // Handle rating slider
     if (ratingInput && ratingValue) {
@@ -589,22 +1089,26 @@ function setupAddMonthForm() {
             saveSpinner.style.display = 'inline-block';
 
             try {
-                await handleAddMonth();
-
-                // Show success toast
-                showToast('Month added successfully!', 'success');
+                if (window.isEditMode) {
+                    await handleEditMonth();
+                    showToast('Month updated successfully!', 'success');
+                } else {
+                    await handleAddMonth();
+                    showToast('Month added successfully!', 'success');
+                }
 
                 // Hide modal on success
                 const modal = bootstrap.Modal.getInstance(document.getElementById('addMonthModal'));
                 modal.hide();
 
-                // Reload months to show the new one
+                // Reload months to show the changes
                 await loadUserMonths(auth.currentUser.uid);
 
             } catch (error) {
-                console.error('Error adding month:', error);
-                showError(errorDiv, `Error adding month: ${error.message}`);
-                showToast(`Error adding month: ${error.message}`, 'error');
+                console.error('Error saving month:', error);
+                const action = window.isEditMode ? 'updating' : 'adding';
+                showError(errorDiv, `Error ${action} month: ${error.message}`);
+                showToast(`Error ${action} month: ${error.message}`, 'error');
             } finally {
                 // Re-enable submit button and hide spinner
                 saveBtn.disabled = false;
@@ -823,7 +1327,174 @@ async function handleAddMonth() {
     await addDoc(monthsRef, monthData);
 
     console.log('Month added successfully:', monthData);
-} function showError(errorDiv, message) {
+}
+
+async function handleEditMonth() {
+    const monthSelect = document.getElementById('monthSelect');
+    const yearInput = document.getElementById('yearInput');
+    const descriptionInput = document.getElementById('descriptionInput');
+    const notesInput = document.getElementById('notesInput');
+    const weightInput = document.getElementById('weightInput');
+    const gymVisitsInput = document.getElementById('gymVisitsInput');
+    const ratingInput = document.getElementById('ratingInput');
+    const videoUrlInput = document.getElementById('videoUrlInput');
+    const videoFileInput = document.getElementById('videoFileInput');
+    const imagesInput = document.getElementById('imagesInput');
+    const errorDiv = document.getElementById('addMonthError');
+
+    // Validate required fields
+    if (!monthSelect.value) {
+        throw new Error('Please select a month.');
+    }
+    if (!yearInput.value) {
+        throw new Error('Please enter a year.');
+    }
+
+    const yearValue = parseInt(yearInput.value);
+    const currentYear = new Date().getFullYear();
+
+    if (yearValue < 2020 || yearValue > currentYear + 5) {
+        throw new Error(`Year must be between 2020 and ${currentYear + 5}.`);
+    }
+
+    const userId = auth.currentUser.uid;
+    const month = monthSelect.value.toLowerCase();
+    const year = yearValue;
+    const rating = parseInt(ratingInput?.value) || 5;
+
+    // Check if month/year combination already exists (but not for the current editing month)
+    const monthsRef = collection(db, "users", userId, "months");
+    const existingQuery = query(
+        monthsRef,
+        where("userId", "==", userId),
+        where("month", "==", month),
+        where("year", "==", year)
+    );
+
+    const existingSnapshot = await getDocs(existingQuery);
+    const existingDocs = existingSnapshot.docs.filter(doc => doc.id !== window.editingMonthId);
+
+    if (existingDocs.length > 0) {
+        throw new Error(`${month.charAt(0).toUpperCase() + month.slice(1)} ${year} already exists.`);
+    }
+
+    // Get current month data
+    const currentMonthData = window.editingMonthData;
+
+    // Handle image deletions first
+    if (window.imagesToDelete && window.imagesToDelete.length > 0) {
+        const deletePromises = window.imagesToDelete.map(async (imageUrl) => {
+            try {
+                const imageRef = ref(storage, imageUrl);
+                await deleteObject(imageRef);
+                console.log('Deleted image:', imageUrl);
+            } catch (error) {
+                console.warn('Failed to delete image:', imageUrl, error);
+            }
+        });
+        await Promise.all(deletePromises);
+    }
+
+    // Upload new images if any
+    let newImageUrls = [];
+    if (window.selectedFiles && window.selectedFiles.length > 0) {
+        const uploadPromises = Array.from(window.selectedFiles).map(async (file, index) => {
+            const fileName = `${userId}_${month}_${year}_img_${index}_${Date.now()}.${file.name.split('.').pop()}`;
+            const imageRef = storageRef(storage, `month_images/${userId}/${fileName}`);
+
+            try {
+                const snapshot = await uploadBytes(imageRef, file);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+                return downloadURL;
+            } catch (error) {
+                console.error('Error uploading image:', error);
+                throw new Error(`Failed to upload image: ${file.name}`);
+            }
+        });
+
+        newImageUrls = await Promise.all(uploadPromises);
+    }
+
+    // Combine existing images (minus deleted ones) with new images
+    let currentImageUrls = currentMonthData.imageUrls || [];
+    if (window.imagesToDelete && window.imagesToDelete.length > 0) {
+        currentImageUrls = currentImageUrls.filter(url => !window.imagesToDelete.includes(url));
+    }
+
+    const finalImageUrls = [...currentImageUrls, ...newImageUrls];
+    const coverURL = finalImageUrls.length > 0 ? finalImageUrls[0] : '';
+
+    // Handle video upload/update
+    let videoUrl = currentMonthData.videoUrl || '';
+    let videoType = currentMonthData.videoType || '';
+
+    if (videoFileInput.files.length > 0) {
+        // Delete old video if it exists and is a storage file
+        if (currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
+            try {
+                const oldVideoRef = ref(storage, currentMonthData.videoUrl);
+                await deleteObject(oldVideoRef);
+                console.log('Deleted old video');
+            } catch (error) {
+                console.warn('Failed to delete old video:', error);
+            }
+        }
+
+        // Upload new video
+        const videoFile = videoFileInput.files[0];
+        const videoFileName = `${userId}_${month}_${year}_video_${Date.now()}.${videoFile.name.split('.').pop()}`;
+        const videoRef = storageRef(storage, `month_videos/${userId}/${videoFileName}`);
+
+        try {
+            const snapshot = await uploadBytes(videoRef, videoFile);
+            videoUrl = await getDownloadURL(snapshot.ref);
+            videoType = 'file';
+        } catch (error) {
+            console.error('Error uploading video:', error);
+            throw new Error('Failed to upload video');
+        }
+    } else if (videoUrlInput.value.trim()) {
+        // Delete old video if it was a storage file and now switching to URL
+        if (currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
+            try {
+                const oldVideoRef = ref(storage, currentMonthData.videoUrl);
+                await deleteObject(oldVideoRef);
+                console.log('Deleted old video file when switching to URL');
+            } catch (error) {
+                console.warn('Failed to delete old video:', error);
+            }
+        }
+
+        videoUrl = videoUrlInput.value.trim();
+        videoType = 'url';
+    }
+
+    // Prepare updated month data
+    const updatedMonthData = {
+        userId: userId,
+        month: month,
+        year: year,
+        description: descriptionInput.value.trim() || '',
+        notes: notesInput.value.trim() || '',
+        weight: weightInput.value ? parseFloat(weightInput.value) : null,
+        gymVisits: gymVisitsInput.value ? parseInt(gymVisitsInput.value) : null,
+        rating: rating,
+        videoUrl: videoUrl,
+        videoType: videoType,
+        imageUrls: finalImageUrls,
+        coverURL: coverURL,
+        createdAt: currentMonthData.createdAt, // Keep original creation date
+        updatedAt: serverTimestamp()
+    };
+
+    // Update in Firestore
+    const monthDocRef = doc(db, "users", userId, "months", window.editingMonthId);
+    await updateDoc(monthDocRef, updatedMonthData);
+
+    console.log('Month updated successfully:', updatedMonthData);
+}
+
+function showError(errorDiv, message) {
     if (errorDiv) {
         errorDiv.textContent = message;
         errorDiv.style.display = 'block';
