@@ -25,7 +25,13 @@ import {
     ref
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-storage.js";
 
-const db = getFirestore(app); document.addEventListener("DOMContentLoaded", () => {
+const db = getFirestore(app);
+
+// Global variables for year filtering
+let allMonths = [];
+let currentSelectedYear = 'all';
+
+document.addEventListener("DOMContentLoaded", () => {
     Initialize();
     setupModalBackdropCleanup();
 });
@@ -65,6 +71,7 @@ function Initialize() {
 
         await loadUserMonths(user.uid);
         setupAddMonthButton();
+        setupYearFilter();
     });
 }
 
@@ -106,25 +113,23 @@ async function loadUserMonths(userId) {
             return bMonth - aMonth;
         });
 
+        // Store all months globally for filtering
+        allMonths = months;
+
+        // Clean up any existing standalone toggle before setting up year filter
+        cleanupStandaloneToggle();
+
+        // Set up year filter buttons
+        setupYearFilterButtons(months);
+
         // Only show skeleton cards if we have months to load (avoids flash when empty)
         if (months.length > 0) {
             // Show skeleton loading cards
             showSkeletonCards(monthsContainer);
         }
 
-        // Clear loading state (skeleton cards) or set initial empty state
-        monthsContainer.innerHTML = '';
-
-        // Always show the "Add Month" card first (whether 0 months or more)
-        const addMonthCard = createAddMonthCard();
-        monthsContainer.appendChild(addMonthCard);
-
-        // If we have months, create cards for them
-        months.forEach(month => {
-            const monthCard = createMonthCard(month);
-            monthsContainer.appendChild(monthCard);
-            setupMonthCardEvents(monthCard, month);
-        });
+        // Display months based on current filter
+        displayFilteredMonths();
 
         // Update sidebar months count
         updateSidebarMonthsCount(months.length);
@@ -145,7 +150,7 @@ async function loadUserMonths(userId) {
                     <p class="text-muted">Error: ${error.message}</p>
                     <button class="btn btn-outline-secondary mt-2" onclick="location.reload()">
                         <i class="bi bi-arrow-clockwise me-2"></i>Retry
-                    </button>
+                    </button>  
                 </div>
             `;
         }
@@ -202,6 +207,215 @@ function createSkeletonCard() {
     `;
 
     return monthCol;
+}
+
+// Year filtering functions
+function setupYearFilterButtons(months) {
+    const yearFilterContainer = document.getElementById('yearFilterContainer');
+    if (!yearFilterContainer || months.length === 0) {
+        if (yearFilterContainer) {
+            yearFilterContainer.style.display = 'none';
+            // Still show the toggle even if no year filter
+            showDetailsToggleAlone();
+        }
+        return;
+    }
+
+    // Get unique years from months and sort them descending
+    const years = [...new Set(months.map(month => month.year))].sort((a, b) => b - a);
+    
+    // Only show year filter if there are multiple years
+    if (years.length <= 1) {
+        yearFilterContainer.style.display = 'none';
+        showDetailsToggleAlone();
+        return;
+    }
+
+    yearFilterContainer.style.display = 'flex';
+
+    // Get the button group container
+    const buttonGroup = yearFilterContainer.querySelector('.btn-group');
+    
+    // Clear existing year buttons (keep "All" button)
+    const existingYearButtons = buttonGroup.querySelectorAll('input:not([value="all"]), label:not([for="yearAll"])');
+    existingYearButtons.forEach(btn => btn.remove());
+
+    // Add year buttons
+    years.forEach(year => {
+        const inputId = `year${year}`;
+        
+        // Create radio input
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.className = 'btn-check';
+        input.name = 'yearFilter';
+        input.id = inputId;
+        input.value = year.toString();
+        
+        // Create label
+        const label = document.createElement('label');
+        label.className = 'btn btn-sm';
+        label.setAttribute('for', inputId);
+        label.textContent = year.toString();
+        
+        buttonGroup.appendChild(input);
+        buttonGroup.appendChild(label);
+    });
+
+    // Set the latest year as default instead of "All"
+    const latestYear = years[0]; // First year in the sorted array (descending)
+    const latestYearInput = buttonGroup.querySelector(`input[value="${latestYear}"]`);
+    const allInput = buttonGroup.querySelector('input[value="all"]');
+    
+    if (latestYearInput) {
+        // Uncheck "All" and check latest year
+        allInput.checked = false;
+        latestYearInput.checked = true;
+        currentSelectedYear = latestYear.toString();
+    }
+
+    // Initialize sliding indicator after buttons are added
+    initializeSlidingIndicator();
+}
+
+function showDetailsToggleAlone() {
+    // Clean up any existing standalone toggle first
+    cleanupStandaloneToggle();
+    
+    // Get the saved preference
+    const savedPreference = localStorage.getItem('showMonthDetails');
+    const showDetails = savedPreference === 'true';
+    
+    // Show the toggle outside the year filter when year filter is hidden
+    const mainContainer = document.querySelector('.container-fluid.mt-4.px-4.pb-4');
+    
+    if (mainContainer) {
+        // Create standalone toggle container
+        const standaloneToggle = document.createElement('div');
+        standaloneToggle.className = 'd-flex justify-content-end mb-3';
+        standaloneToggle.id = 'standalone-details-toggle';
+        standaloneToggle.innerHTML = `
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="showDetailsToggleStandalone" ${showDetails ? 'checked' : ''}>
+                <label class="form-check-label" for="showDetailsToggleStandalone">
+                    <i class="bi bi-eye me-1"></i>Show Details
+                </label>
+            </div>
+        `;
+        
+        // Insert after the header but before months
+        const monthsRow = document.querySelector('.months-row');
+        if (monthsRow) {
+            monthsRow.parentNode.insertBefore(standaloneToggle, monthsRow);
+        }
+    }
+}
+
+function cleanupStandaloneToggle() {
+    const existingStandalone = document.getElementById('standalone-details-toggle');
+    if (existingStandalone) {
+        existingStandalone.remove();
+    }
+}
+
+function initializeSlidingIndicator() {
+    const yearFilterContainer = document.getElementById('yearFilterContainer');
+    if (!yearFilterContainer) return;
+
+    const buttonGroup = yearFilterContainer.querySelector('.btn-group');
+    if (!buttonGroup) return;
+
+    // Wait for next frame to ensure all elements are rendered
+    requestAnimationFrame(() => {
+        // Use the currently selected year instead of hardcoding "all"
+        updateSlidingIndicator(currentSelectedYear);
+    });
+}
+
+function updateSlidingIndicator(selectedValue) {
+    const yearFilterContainer = document.getElementById('yearFilterContainer');
+    if (!yearFilterContainer) return;
+
+    const buttonGroup = yearFilterContainer.querySelector('.btn-group');
+    if (!buttonGroup) return;
+
+    const activeInput = buttonGroup.querySelector(`input[value="${selectedValue}"]`);
+    if (!activeInput) return;
+
+    const activeLabel = buttonGroup.querySelector(`label[for="${activeInput.id}"]`);
+    if (!activeLabel) return;
+
+    // Calculate position and width
+    const buttonGroupRect = buttonGroup.getBoundingClientRect();
+    const activeLabelRect = activeLabel.getBoundingClientRect();
+    
+    const relativeLeft = activeLabelRect.left - buttonGroupRect.left;
+    const width = activeLabelRect.width;
+
+    // Update CSS custom properties
+    buttonGroup.style.setProperty('--slider-width', `${width}px`);
+    buttonGroup.style.setProperty('--slider-left', `${relativeLeft}px`);
+}
+
+function setupYearFilter() {
+    const yearFilterContainer = document.getElementById('yearFilterContainer');
+    if (!yearFilterContainer) return;
+
+    // Add event listener for year filter changes
+    yearFilterContainer.addEventListener('change', (e) => {
+        if (e.target.name === 'yearFilter') {
+            const selectedValue = e.target.value;
+            currentSelectedYear = selectedValue;
+            
+            // Update sliding indicator
+            updateSlidingIndicator(selectedValue);
+            
+            // Display filtered months
+            displayFilteredMonths();
+        }
+    });
+}
+
+function displayFilteredMonths() {
+    const monthsContainer = document.querySelector('.months-row');
+    if (!monthsContainer) return;
+
+    // Clear current content
+    monthsContainer.innerHTML = '';
+
+    // Always show the "Add Month" card first
+    const addMonthCard = createAddMonthCard();
+    monthsContainer.appendChild(addMonthCard);
+
+    // Filter months based on selected year
+    let filteredMonths = allMonths;
+    if (currentSelectedYear !== 'all') {
+        filteredMonths = allMonths.filter(month => month.year.toString() === currentSelectedYear);
+    }
+
+    // Display filtered months
+    filteredMonths.forEach(month => {
+        const monthCard = createMonthCard(month);
+        monthsContainer.appendChild(monthCard);
+        setupMonthCardEvents(monthCard, month);
+    });
+
+    // If no months match the filter, show a message (but keep the Add Month card)
+    if (filteredMonths.length === 0 && currentSelectedYear !== 'all') {
+        const noMonthsMessage = document.createElement('div');
+        noMonthsMessage.className = 'months-col';
+        noMonthsMessage.innerHTML = `
+            <div class="col-12 text-center p-5">
+                <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+                <h5 class="mt-3 text-muted">No months found for ${currentSelectedYear}</h5>
+                <p class="text-muted">Try selecting a different year or add a new month for this year.</p>
+            </div>
+        `;
+        monthsContainer.appendChild(noMonthsMessage);
+    }
+
+    // Apply details toggle state after cards are created
+    applyDetailsToggleState();
 }
 
 function createMonthCard(month) {
@@ -1211,40 +1425,56 @@ async function handleDeleteMonth(monthId, monthName, year) {
 }
 
 function setupDetailsToggle() {
+    // Check for both regular toggle (inside year filter) and standalone toggle
     const toggle = document.getElementById('showDetailsToggle');
-    if (!toggle) return;
+    const standaloneToggle = document.getElementById('showDetailsToggleStandalone');
+    
+    const activeToggle = toggle || standaloneToggle;
+    
+    if (!activeToggle) return;
 
     // Restore user's preference from localStorage
     const savedPreference = localStorage.getItem('showMonthDetails');
     const showDetails = savedPreference === 'true';
 
     // Set toggle state
-    toggle.checked = showDetails;
+    activeToggle.checked = showDetails;
 
-    // Apply the preference to existing month details
+    // Apply the current state to existing month details
+    applyDetailsToggleState();
+
+    // Add event listener to the active toggle (remove any existing listeners first)
+    const newToggle = activeToggle.cloneNode(true);
+    activeToggle.parentNode.replaceChild(newToggle, activeToggle);
+    
+    newToggle.addEventListener('change', (e) => {
+        const showDetails = e.target.checked;
+        
+        // Apply to all month details
+        applyDetailsToggleState();
+
+        // Store preference in localStorage
+        localStorage.setItem('showMonthDetails', showDetails.toString());
+    });
+}
+
+function applyDetailsToggleState() {
+    // Get the current toggle state
+    const toggle = document.getElementById('showDetailsToggle');
+    const standaloneToggle = document.getElementById('showDetailsToggleStandalone');
+    const activeToggle = toggle || standaloneToggle;
+    
+    if (!activeToggle) return;
+    
+    const showDetails = activeToggle.checked;
     const monthDetails = document.querySelectorAll('.month-details');
+
     monthDetails.forEach(detail => {
         if (showDetails) {
             detail.classList.remove("d-none");
         } else {
             detail.classList.add("d-none");
         }
-    });
-
-    toggle.addEventListener('change', (e) => {
-        const showDetails = e.target.checked;
-        const monthDetails = document.querySelectorAll('.month-details');
-
-        monthDetails.forEach(detail => {
-            if (showDetails) {
-                detail.classList.remove("d-none");
-            } else {
-                detail.classList.add("d-none");
-            }
-        });
-
-        // Store preference in localStorage
-        localStorage.setItem('showMonthDetails', showDetails.toString());
     });
 }
 

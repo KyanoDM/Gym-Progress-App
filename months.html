@@ -20,22 +20,37 @@
                 const htmlElement = document.documentElement;
                 if (theme === 'dark') {
                     htmlElement.setAttribute('data-bs-theme', 'dark');
-                    document.body.classList.add('bg-dark');
+                    if (document.body) {
+                        document.body.classList.add('bg-dark');
+                    }
                 } else if (theme === 'light') {
                     htmlElement.setAttribute('data-bs-theme', 'light');
-                    document.body.classList.remove('bg-dark');
+                    if (document.body) {
+                        document.body.classList.remove('bg-dark');
+                    }
                 } else if (theme === 'auto') {
                     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                     if (prefersDark) {
                         htmlElement.setAttribute('data-bs-theme', 'dark');
-                        document.body.classList.add('bg-dark');
+                        if (document.body) {
+                            document.body.classList.add('bg-dark');
+                        }
                     } else {
                         htmlElement.setAttribute('data-bs-theme', 'light');
-                        document.body.classList.remove('bg-dark');
+                        if (document.body) {
+                            document.body.classList.remove('bg-dark');
+                        }
                     }
                 }
             }
+            
+            // Apply theme immediately for html element
             applyTheme(savedTheme);
+            
+            // Apply body theme when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => applyTheme(savedTheme));
+            }
         })();
     </script>
 </head>
@@ -126,6 +141,17 @@
             <div class="container-fluid mt-4 px-4 pb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3 class="mb-0">Your Months</h3>
+                </div>
+
+                <!-- Year Filter -->
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3" id="yearFilterContainer" style="display: none;">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted fw-bold me-2">Filter by year:</span>
+                        <div class="btn-group" role="group" aria-label="Year filter">
+                            <input type="radio" class="btn-check" name="yearFilter" id="yearAll" value="all" checked>
+                            <label class="btn btn-outline-primary btn-sm" for="yearAll">All</label>
+                        </div>
+                    </div>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="showDetailsToggle">
                         <label class="form-check-label" for="showDetailsToggle">
