@@ -357,7 +357,7 @@ function populateEditForm(month) {
         if (descriptionCounter) {
             const currentLength = month.description.length;
             descriptionCounter.textContent = currentLength;
-            
+
             // Change color if approaching limit
             if (currentLength > 90) {
                 descriptionCounter.style.color = '#dc3545'; // Red
@@ -1012,11 +1012,11 @@ function setupAddMonthForm() {
     if (descriptionInput && descriptionCounter) {
         // Update counter on page load
         descriptionCounter.textContent = descriptionInput.value.length;
-        
+
         descriptionInput.addEventListener('input', (e) => {
             const currentLength = e.target.value.length;
             descriptionCounter.textContent = currentLength;
-            
+
             // Change color if approaching limit
             if (currentLength > 90) {
                 descriptionCounter.style.color = '#dc3545'; // Red
@@ -1088,6 +1088,10 @@ function setupAddMonthForm() {
             saveBtn.disabled = true;
             saveSpinner.style.display = 'inline-block';
 
+            // Show progress bar and disable modal closing
+            showUploadProgress();
+            disableModalClose();
+
             try {
                 if (window.isEditMode) {
                     await handleEditMonth();
@@ -1113,6 +1117,10 @@ function setupAddMonthForm() {
                 // Re-enable submit button and hide spinner
                 saveBtn.disabled = false;
                 saveSpinner.style.display = 'none';
+
+                // Hide progress bar and re-enable modal closing
+                hideUploadProgress();
+                enableModalClose();
             }
         });
     }
@@ -1261,21 +1269,7 @@ async function handleAddMonth() {
     let coverURL = '';
 
     if (window.selectedFiles && window.selectedFiles.length > 0) {
-        const uploadPromises = Array.from(window.selectedFiles).map(async (file, index) => {
-            const fileName = `${userId}_${month}_${year}_img_${index}_${Date.now()}.${file.name.split('.').pop()}`;
-            const imageRef = storageRef(storage, `month_images/${userId}/${fileName}`);
-
-            try {
-                const snapshot = await uploadBytes(imageRef, file);
-                const downloadURL = await getDownloadURL(snapshot.ref);
-                return downloadURL;
-            } catch (error) {
-                console.error('Error uploading image:', error);
-                throw new Error(`Failed to upload image: ${file.name}`);
-            }
-        });
-
-        imageUrls = await Promise.all(uploadPromises);
+        imageUrls = await uploadImagesWithProgress(window.selectedFiles, userId, month, year);
         coverURL = imageUrls[0] || ''; // First image as cover
     }
 
@@ -1284,26 +1278,17 @@ async function handleAddMonth() {
     let videoType = '';
     if (videoFileInput.files.length > 0) {
         const videoFile = videoFileInput.files[0];
-        // Check file size (100MB limit)
-        if (videoFile.size > 200 * 1024 * 1024) {
-            throw new Error('Video file is too large. Maximum size is 200MB.');
-        }
-
-        const videoFileName = `${userId}_${month}_${year}_video_${Date.now()}.${videoFile.name.split('.').pop()}`;
-        const videoRef = storageRef(storage, `month_videos/${userId}/${videoFileName}`);
-
-        try {
-            const snapshot = await uploadBytes(videoRef, videoFile);
-            videoUrl = await getDownloadURL(snapshot.ref);
-            videoType = 'upload';
-        } catch (error) {
-            console.error('Error uploading video:', error);
-            throw new Error(`Failed to upload video: ${videoFile.name}`);
-        }
+        const videoResult = await uploadVideoWithProgress(videoFile, userId, month, year);
+        videoUrl = videoResult.url;
+        videoType = videoResult.type;
     } else if (videoUrlInput.value.trim()) {
+        updateProgress(60, `<div class="progress-step"><i class="bi bi-link-45deg me-1"></i>Adding video URL</div>`);
         videoUrl = videoUrlInput.value.trim();
         videoType = 'url';
     }
+
+    // Prepare and save month data
+    updateProgress(95, `<div class="progress-step"><i class="bi bi-database me-1"></i>Saving month data...</div>`);
 
     // Prepare month data
     const monthData = {
@@ -1325,6 +1310,8 @@ async function handleAddMonth() {
 
     // Add to Firestore
     await addDoc(monthsRef, monthData);
+
+    updateProgress(100, `<div class="progress-step"><i class="bi bi-check-circle me-1"></i>Month added successfully!</div>`);
 
     console.log('Month added successfully:', monthData);
 }
@@ -1383,6 +1370,8 @@ async function handleEditMonth() {
 
     // Handle image deletions first
     if (window.imagesToDelete && window.imagesToDelete.length > 0) {
+        updateProgress(5, `<div class="progress-step"><i class="bi bi-trash me-1"></i>Removing old images...</div>`);
+
         const deletePromises = window.imagesToDelete.map(async (imageUrl) => {
             try {
                 const imageRef = ref(storage, imageUrl);
@@ -1398,21 +1387,7 @@ async function handleEditMonth() {
     // Upload new images if any
     let newImageUrls = [];
     if (window.selectedFiles && window.selectedFiles.length > 0) {
-        const uploadPromises = Array.from(window.selectedFiles).map(async (file, index) => {
-            const fileName = `${userId}_${month}_${year}_img_${index}_${Date.now()}.${file.name.split('.').pop()}`;
-            const imageRef = storageRef(storage, `month_images/${userId}/${fileName}`);
-
-            try {
-                const snapshot = await uploadBytes(imageRef, file);
-                const downloadURL = await getDownloadURL(snapshot.ref);
-                return downloadURL;
-            } catch (error) {
-                console.error('Error uploading image:', error);
-                throw new Error(`Failed to upload image: ${file.name}`);
-            }
-        });
-
-        newImageUrls = await Promise.all(uploadPromises);
+        newImageUrls = await uploadImagesWithProgress(window.selectedFiles, userId, month, year);
     }
 
     // Combine existing images (minus deleted ones) with new images
@@ -1431,6 +1406,7 @@ async function handleEditMonth() {
     if (videoFileInput.files.length > 0) {
         // Delete old video if it exists and is a storage file
         if (currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
+            updateProgress(55, `<div class="progress-step"><i class="bi bi-trash me-1"></i>Removing old video...</div>`);
             try {
                 const oldVideoRef = ref(storage, currentMonthData.videoUrl);
                 await deleteObject(oldVideoRef);
@@ -1442,20 +1418,13 @@ async function handleEditMonth() {
 
         // Upload new video
         const videoFile = videoFileInput.files[0];
-        const videoFileName = `${userId}_${month}_${year}_video_${Date.now()}.${videoFile.name.split('.').pop()}`;
-        const videoRef = storageRef(storage, `month_videos/${userId}/${videoFileName}`);
-
-        try {
-            const snapshot = await uploadBytes(videoRef, videoFile);
-            videoUrl = await getDownloadURL(snapshot.ref);
-            videoType = 'file';
-        } catch (error) {
-            console.error('Error uploading video:', error);
-            throw new Error('Failed to upload video');
-        }
+        const videoResult = await uploadVideoWithProgress(videoFile, userId, month, year);
+        videoUrl = videoResult.url;
+        videoType = 'file';
     } else if (videoUrlInput.value.trim()) {
         // Delete old video if it was a storage file and now switching to URL
         if (currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
+            updateProgress(60, `<div class="progress-step"><i class="bi bi-trash me-1"></i>Removing old video file...</div>`);
             try {
                 const oldVideoRef = ref(storage, currentMonthData.videoUrl);
                 await deleteObject(oldVideoRef);
@@ -1465,9 +1434,13 @@ async function handleEditMonth() {
             }
         }
 
+        updateProgress(70, `<div class="progress-step"><i class="bi bi-link-45deg me-1"></i>Updating video URL</div>`);
         videoUrl = videoUrlInput.value.trim();
         videoType = 'url';
     }
+
+    // Prepare updated month data
+    updateProgress(95, `<div class="progress-step"><i class="bi bi-database me-1"></i>Updating month data...</div>`);
 
     // Prepare updated month data
     const updatedMonthData = {
@@ -1490,6 +1463,8 @@ async function handleEditMonth() {
     // Update in Firestore
     const monthDocRef = doc(db, "users", userId, "months", window.editingMonthId);
     await updateDoc(monthDocRef, updatedMonthData);
+
+    updateProgress(100, `<div class="progress-step"><i class="bi bi-check-circle me-1"></i>Month updated successfully!</div>`);
 
     console.log('Month updated successfully:', updatedMonthData);
 }
@@ -1532,4 +1507,129 @@ function showToast(message, type = 'success') {
     toastElement.addEventListener('hidden.bs.toast', () => {
         toastElement.remove();
     });
+}
+
+// Progress Bar Functions
+function showUploadProgress() {
+    const progressSection = document.getElementById('uploadProgress');
+    if (progressSection) {
+        progressSection.style.display = 'block';
+        updateProgress(0, 'Preparing upload...');
+    }
+}
+
+function hideUploadProgress() {
+    const progressSection = document.getElementById('uploadProgress');
+    if (progressSection) {
+        progressSection.style.display = 'none';
+    }
+}
+
+function updateProgress(percentage, details = '') {
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const progressDetails = document.getElementById('progressDetails');
+
+    if (progressBar) {
+        progressBar.style.width = `${percentage}%`;
+        progressBar.setAttribute('aria-valuenow', percentage);
+    }
+
+    if (progressText) {
+        progressText.textContent = `${Math.round(percentage)}%`;
+    }
+
+    if (progressDetails && details) {
+        progressDetails.innerHTML = details;
+    }
+}
+
+function disableModalClose() {
+    const modal = document.getElementById('addMonthModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    if (modal) {
+        modal.classList.add('modal-uploading');
+    }
+
+    if (cancelBtn) {
+        cancelBtn.disabled = true;
+        cancelBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Uploading...';
+    }
+}
+
+function enableModalClose() {
+    const modal = document.getElementById('addMonthModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+
+    if (modal) {
+        modal.classList.remove('modal-uploading');
+    }
+
+    if (cancelBtn) {
+        cancelBtn.disabled = false;
+        cancelBtn.innerHTML = 'Cancel';
+    }
+}
+
+// Enhanced upload functions with progress tracking
+async function uploadImagesWithProgress(files, userId, month, year) {
+    if (!files || files.length === 0) return [];
+
+    updateProgress(10, 'Starting image uploads...');
+
+    const imageUrls = [];
+    const totalFiles = files.length;
+
+    for (let i = 0; i < totalFiles; i++) {
+        const file = files[i];
+        const fileName = `${userId}_${month}_${year}_img_${i}_${Date.now()}.${file.name.split('.').pop()}`;
+        const imageRef = storageRef(storage, `month_images/${userId}/${fileName}`);
+
+        try {
+            // Update progress for current image
+            const baseProgress = 10 + (i / totalFiles) * 40; // Images take 40% of total progress
+            updateProgress(baseProgress, `<div class="progress-step"><i class="bi bi-image me-1"></i>Uploading image ${i + 1} of ${totalFiles}: ${file.name}</div>`);
+
+            const snapshot = await uploadBytes(imageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            imageUrls.push(downloadURL);
+
+            // Update progress after successful upload
+            const completedProgress = 10 + ((i + 1) / totalFiles) * 40;
+            updateProgress(completedProgress, `<div class="progress-step"><i class="bi bi-check-circle me-1"></i>Image ${i + 1} uploaded successfully</div>`);
+
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            throw new Error(`Failed to upload image: ${file.name}`);
+        }
+    }
+
+    return imageUrls;
+}
+
+async function uploadVideoWithProgress(videoFile, userId, month, year) {
+    if (!videoFile) return { url: '', type: '' };
+
+    // Check file size
+    if (videoFile.size > 200 * 1024 * 1024) {
+        throw new Error('Video file is too large. Maximum size is 200MB.');
+    }
+
+    updateProgress(50, `<div class="progress-step"><i class="bi bi-play-circle me-1"></i>Uploading video: ${videoFile.name}</div>`);
+
+    const videoFileName = `${userId}_${month}_${year}_video_${Date.now()}.${videoFile.name.split('.').pop()}`;
+    const videoRef = storageRef(storage, `month_videos/${userId}/${videoFileName}`);
+
+    try {
+        const snapshot = await uploadBytes(videoRef, videoFile);
+        const videoUrl = await getDownloadURL(snapshot.ref);
+
+        updateProgress(90, `<div class="progress-step"><i class="bi bi-check-circle me-1"></i>Video uploaded successfully</div>`);
+
+        return { url: videoUrl, type: 'upload' };
+    } catch (error) {
+        console.error('Error uploading video:', error);
+        throw new Error(`Failed to upload video: ${videoFile.name}`);
+    }
 }

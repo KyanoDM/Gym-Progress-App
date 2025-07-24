@@ -180,7 +180,8 @@
                                     <textarea class="form-control" id="descriptionInput" rows="2" maxlength="100"
                                         placeholder="Brief description of your progress this month..."></textarea>
                                     <div class="d-flex justify-content-between">
-                                        <small class="form-text text-muted">Brief description of your progress this month</small>
+                                        <small class="form-text text-muted">Brief description of your progress this
+                                            month</small>
                                         <small class="form-text text-muted">
                                             <span id="descriptionCounter">0</span>/100 characters
                                         </small>
@@ -266,10 +267,30 @@
                             </div>
 
                             <div id="addMonthError" class="alert alert-danger" style="display: none;"></div>
+
+                            <!-- Progress Section -->
+                            <div id="uploadProgress" class="mt-4" style="display: none;">
+                                <div class="bg-light p-3 rounded border">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-cloud-arrow-up me-2 text-primary"></i>
+                                        <span class="fw-bold text-primary">Upload Progress</span>
+                                    </div>
+                                    <div class="progress mb-2" style="height: 35px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                            id="progressBar" role="progressbar" style="width: 0%">
+                                            <strong id="progressText" style="font-size: 16px;">0%</strong>
+                                        </div>
+                                    </div>
+                                    <div class="small text-muted" id="progressDetails">
+                                        Preparing upload...
+                                    </div>
+                                </div>
+                            </div>
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                            id="cancelBtn">Cancel</button>
                         <button type="submit" form="addMonthForm" class="btn btn-primary" id="saveMonthBtn">
                             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"
                                 style="display: none;" id="saveSpinner"></span>
@@ -408,8 +429,7 @@
                                 style="width: 100%; height: auto;">
 
                             <!-- Navigation arrows -->
-                            <button
-                                class="btn btn-light position-absolute start-0 top-50 translate-middle-y ms-3"
+                            <button class="btn btn-light position-absolute start-0 top-50 translate-middle-y ms-3"
                                 id="lightboxPrev" style="z-index: 1000;">
                                 <i class="bi bi-chevron-left"></i>
                             </button>
