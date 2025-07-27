@@ -934,6 +934,119 @@ body:not(.modal-open) .modal-backdrop {
     display: none !important;
 }
 
+/* Feed Post Creation Styles */
+.post-type-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.post-type-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: #007bff !important;
+}
+
+.post-type-card.selected {
+    border-color: #007bff !important;
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.image-option {
+    position: relative;
+    display: inline-block;
+    margin: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.image-option:hover {
+    transform: scale(1.05);
+}
+
+.image-option img {
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.3s ease;
+}
+
+.image-option input[type="radio"]:checked+label+img,
+.image-option input[type="radio"]:checked~img {
+    border-color: #007bff;
+}
+
+.image-option label {
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+/* Transformation preview styles */
+#transformation-preview .card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+#transformation-preview img {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+#transformation-preview img:hover {
+    transform: scale(1.02);
+}
+
+/* Feed layout styles */
+#feed-posts .card {
+    transition: all 0.3s ease;
+}
+
+#feed-posts .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Create post section styling */
+.create-post-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+/* Character counter styles */
+.text-muted small {
+    font-size: 0.75rem;
+}
+
+/* Modal improvements */
+.modal-lg {
+    max-width: 900px;
+}
+
+#createPostModal .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Toast improvements */
+.toast-container .toast {
+    backdrop-filter: blur(10px);
+}
+
+/* Dark mode styles for feed */
+[data-bs-theme="dark"] .post-type-card {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-bs-theme="dark"] .post-type-card:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    border-color: #007bff !important;
+}
+
+[data-bs-theme="dark"] .create-post-section {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+[data-bs-theme="dark"] #transformation-preview .card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
 /* Dark Mode Upload Progress Styles */
 [data-bs-theme="dark"] #uploadProgress {
     background: #2d2d2d !important;
@@ -1182,4 +1295,37 @@ body:not(.modal-open) .modal-backdrop {
 [data-bs-theme="dark"] #standalone-details-toggle .form-check-input:checked {
     background-color: #63b3ed;
     border-color: #63b3ed;
+}
+
+/* Comments Section Styles */
+.comments-section {
+    background-color: rgba(248, 249, 250, 0.5);
+}
+
+[data-bs-theme="dark"] .comments-section {
+    background-color: rgba(33, 37, 41, 0.5);
+}
+
+.comment-avatar {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+}
+
+.like-btn.liked i {
+    color: #dc3545 !important;
+}
+
+/* Loading animation for posts */
+#posts-loading .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Responsive post width adjustments */
+@media (max-width: 576px) {
+    .col-lg-4 {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
 }

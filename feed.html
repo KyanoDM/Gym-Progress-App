@@ -19,18 +19,26 @@
                 const htmlElement = document.documentElement;
                 if (theme === 'dark') {
                     htmlElement.setAttribute('data-bs-theme', 'dark');
-                    document.body.classList.add('bg-dark');
+                    if (document.body) {
+                        document.body.classList.add('bg-dark');
+                    }
                 } else if (theme === 'light') {
                     htmlElement.setAttribute('data-bs-theme', 'light');
-                    document.body.classList.remove('bg-dark');
+                    if (document.body) {
+                        document.body.classList.remove('bg-dark');
+                    }
                 } else if (theme === 'auto') {
                     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                     if (prefersDark) {
                         htmlElement.setAttribute('data-bs-theme', 'dark');
-                        document.body.classList.add('bg-dark');
+                        if (document.body) {
+                            document.body.classList.add('bg-dark');
+                        }
                     } else {
                         htmlElement.setAttribute('data-bs-theme', 'light');
-                        document.body.classList.remove('bg-dark');
+                        if (document.body) {
+                            document.body.classList.remove('bg-dark');
+                        }
                     }
                 }
             }
@@ -132,12 +140,280 @@
                 </div>
                 <button class="btn btn-sm btn-primary ms-3">Complete</button>
             </div>
+
+            <!-- Feed Content -->
+            <div class="container-fluid pt-4 px-4">
+                <!-- Create Post Section -->
+                <div class="row justify-content-center mb-4">
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div id="user-avatar-wrapper"
+                                        class="skeleton skeleton-circle skeleton-avatar-sm d-inline-block me-3">
+                                        <img id="user-avatar" src="" alt="User avatar" class="rounded-circle" width="40"
+                                            height="40" style="display: none;" />
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0">Share your progress with the community!</h6>
+                                        <small class="text-muted">What would you like to share today?</small>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-primary flex-fill" data-bs-toggle="modal"
+                                        data-bs-target="#createPostModal" data-post-type="month">
+                                        <i class="bi bi-calendar-check me-2"></i>Share a Month
+                                    </button>
+                                    <button class="btn btn-outline-primary flex-fill" data-bs-toggle="modal"
+                                        data-bs-target="#createPostModal" data-post-type="transformation">
+                                        <i class="bi bi-arrow-left-right me-2"></i>Transformation Post
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feed Posts Section -->
+                <div class="row justify-content-center">
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div id="feed-posts" class="d-flex flex-column gap-4">
+                            <!-- Loading animation -->
+                            <div id="posts-loading" class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading posts...</span>
+                                </div>
+                                <p class="mt-3 text-muted">Loading your feed...</p>
+                            </div>
+                            <!-- Posts will be loaded here -->
+                            <div id="no-posts-message" class="text-center py-5" style="display: none;">
+                                <i class="bi bi-rss text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3 text-muted">No posts yet</h5>
+                                <p class="text-muted">Follow other users or create your first post to see content here!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="container mt-5">
+    <!-- Create Post Modal -->
+    <div class="modal fade" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createPostModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Create Post
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Post Type Selection -->
+                    <div class="mb-4" id="post-type-selection">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="bi bi-list-task me-2"></i>What would you like to share?
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="card border post-type-card" data-post-type="month" style="cursor: pointer;">
+                                    <div class="card-body text-center p-4">
+                                        <i class="bi bi-calendar-check text-primary mb-3"
+                                            style="font-size: 2.5rem;"></i>
+                                        <h6 class="card-title">Share a Month</h6>
+                                        <p class="card-text small text-muted">Share one of your tracked months with
+                                            progress images and details</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="card border post-type-card" data-post-type="transformation"
+                                    style="cursor: pointer;">
+                                    <div class="card-body text-center p-4">
+                                        <i class="bi bi-arrow-left-right text-primary mb-3"
+                                            style="font-size: 2.5rem;"></i>
+                                        <h6 class="card-title">Transformation</h6>
+                                        <p class="card-text small text-muted">Show your transformation with before/after
+                                            photos from different months</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
+                    <!-- Month Post Creation -->
+                    <div id="month-post-creation" style="display: none;">
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-primary mb-3">
+                                <i class="bi bi-calendar-check me-2"></i>Share a Month
+                            </h6>
+
+                            <!-- Month Selection -->
+                            <div class="mb-3">
+                                <label for="monthSelect" class="form-label">Select Month *</label>
+                                <select class="form-select" id="monthSelect" required>
+                                    <option value="">Choose a month to share...</option>
+                                    <!-- Months will be loaded here -->
+                                </select>
+                            </div>
+
+                            <!-- Month Preview -->
+                            <div id="month-preview" class="mb-3" style="display: none;">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div id="month-preview-images" class="d-flex flex-wrap gap-2">
+                                                    <!-- Month images will be shown here -->
+                                                </div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <h6 id="month-preview-title">Month Title</h6>
+                                                <p id="month-preview-description" class="text-muted small">Month
+                                                    description...</p>
+                                                <div class="d-flex gap-3 small text-muted">
+                                                    <span id="month-preview-weight">Weight: -- kg</span>
+                                                    <span id="month-preview-rating">Rating: --/10</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Image Selection -->
+                            <div id="image-selection" class="mb-3" style="display: none;">
+                                <label class="form-label">Select Image to Share *</label>
+                                <div id="image-options" class="d-flex flex-wrap gap-2">
+                                    <!-- Image options will be loaded here -->
+                                </div>
+                            </div>
+
+                            <!-- Text Option -->
+                            <div id="text-option" class="mb-3" style="display: none;">
+                                <label class="form-label">Post Caption</label>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="textOption" id="useOriginalText"
+                                        value="original" checked>
+                                    <label class="form-check-label" for="useOriginalText">
+                                        Use original month description
+                                    </label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="textOption" id="useCustomText"
+                                        value="custom">
+                                    <label class="form-check-label" for="useCustomText">
+                                        Write custom caption
+                                    </label>
+                                </div>
+                                <div id="custom-text-area" style="display: none;">
+                                    <textarea class="form-control" id="customPostText" rows="3" maxlength="500"
+                                        placeholder="Write your custom caption here..."></textarea>
+                                    <div class="d-flex justify-content-end mt-1">
+                                        <small class="text-muted">
+                                            <span id="customTextCounter">0</span>/500 characters
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transformation Post Creation -->
+                    <div id="transformation-post-creation" style="display: none;">
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-primary mb-3">
+                                <i class="bi bi-arrow-left-right me-2"></i>Transformation Post
+                            </h6>
+
+                            <!-- Before Image Selection -->
+                            <div class="mb-4">
+                                <label class="form-label">Before Image (Older Month) *</label>
+                                <select class="form-select mb-3" id="beforeMonthSelect" required>
+                                    <option value="">Choose month for BEFORE image...</option>
+                                    <!-- Months will be loaded here -->
+                                </select>
+                                <div id="before-image-selection" class="mb-3" style="display: none;">
+                                    <label class="form-label small text-muted">Select Image</label>
+                                    <div id="before-image-options" class="d-flex flex-wrap gap-2">
+                                        <!-- Before image options will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- After Image Selection -->
+                            <div class="mb-4">
+                                <label class="form-label">After Image (Recent Month) *</label>
+                                <select class="form-select mb-3" id="afterMonthSelect" required>
+                                    <option value="">Choose month for AFTER image...</option>
+                                    <!-- Months will be loaded here -->
+                                </select>
+                                <div id="after-image-selection" class="mb-3" style="display: none;">
+                                    <label class="form-label small text-muted">Select Image</label>
+                                    <div id="after-image-options" class="d-flex flex-wrap gap-2">
+                                        <!-- After image options will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Transformation Preview -->
+                            <div id="transformation-preview" class="mb-4" style="display: none;">
+                                <label class="form-label">Preview</label>
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-6 text-center">
+                                                <img id="before-preview-img" src="" alt="Before"
+                                                    class="img-fluid rounded mb-2" style="max-height: 200px;">
+                                                <p class="small text-muted mb-0">Before</p>
+                                                <p class="small text-muted" id="before-date">--</p>
+                                            </div>
+                                            <div class="col-6 text-center">
+                                                <img id="after-preview-img" src="" alt="After"
+                                                    class="img-fluid rounded mb-2" style="max-height: 200px;">
+                                                <p class="small text-muted mb-0">After</p>
+                                                <p class="small text-muted" id="after-date">--</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Transformation Text -->
+                            <div class="mb-3">
+                                <label for="transformationText" class="form-label">Transformation Story *</label>
+                                <textarea class="form-control" id="transformationText" rows="4" maxlength="1000"
+                                    required
+                                    placeholder="Share your transformation story, what changed, challenges you overcame, tips for others..."></textarea>
+                                <div class="d-flex justify-content-end mt-1">
+                                    <small class="text-muted">
+                                        <span id="transformationTextCounter">0</span>/1000 characters
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="createPostError" class="alert alert-danger" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="backToSelection" style="display: none;">
+                        <i class="bi bi-arrow-left me-2"></i>Back
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="createPostBtn" style="display: none;">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"
+                            style="display: none;" id="createPostSpinner"></span>
+                        <i class="bi bi-plus me-2"></i>Create Post
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
 </body>
 
