@@ -527,25 +527,40 @@ function checkCurrentMonthStatus(months) {
     const fillCurrentMonthBtn = document.getElementById('fill-current-month-btn');
     const fillMonthText = document.getElementById('fill-month-text');
 
-    if (!fillCurrentMonthBtn || !fillMonthText) return;
+    if (!fillCurrentMonthBtn || !fillMonthText) {
+        console.warn('Fill current month elements not found');
+        return;
+    }
 
     const now = new Date();
     const currentMonth = now.toLocaleDateString('en-US', { month: 'long' }).toLowerCase();
     const currentYear = now.getFullYear();
 
+    console.log(`Checking for current month: ${currentMonth} ${currentYear}`);
+    console.log(`User months:`, months.map(m => `${m.month} ${m.year}`));
+
     // Check if current month exists in user's months
-    const currentMonthExists = months.some(month =>
-        month.month?.toLowerCase() === currentMonth && month.year === currentYear
-    );
+    const currentMonthExists = months.some(month => {
+        const monthMatch = month.month?.toLowerCase() === currentMonth;
+        const yearMatch = month.year === currentYear;
+        console.log(`Comparing: ${month.month?.toLowerCase()} === ${currentMonth} (${monthMatch}) && ${month.year} === ${currentYear} (${yearMatch})`);
+        return monthMatch && yearMatch;
+    });
 
     if (!currentMonthExists) {
         // Show the button and update text
         fillCurrentMonthBtn.style.display = 'flex';
+        fillCurrentMonthBtn.style.visibility = 'visible';
+        fillCurrentMonthBtn.classList.remove('d-none');
         const monthName = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
         fillMonthText.textContent = `Fill ${monthName} ${currentYear}`;
+        console.log(`Current month ${monthName} ${currentYear} not found - showing button`);
     } else {
-        // Hide the button
+        // Hide the button using multiple methods to ensure it's hidden
         fillCurrentMonthBtn.style.display = 'none';
+        fillCurrentMonthBtn.style.visibility = 'hidden';
+        fillCurrentMonthBtn.classList.add('d-none');
+        console.log(`Current month ${currentMonth} ${currentYear} already exists - hiding button`);
     }
 }
 

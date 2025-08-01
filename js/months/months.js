@@ -271,6 +271,9 @@ function setupYearFilterButtons(months) {
     }
 
     yearFilterContainer.style.display = 'flex';
+    
+    // Clean up standalone toggle since year filter is now shown
+    cleanupStandaloneToggle();
 
     // Get the button group container
     const buttonGroup = yearFilterContainer.querySelector('.btn-group');
@@ -328,26 +331,7 @@ function showDetailsToggleAlone() {
     // Show the toggle outside the year filter when year filter is hidden
     const mainContainer = document.querySelector('.container-fluid.mt-4.px-4.pb-4');
 
-    if (mainContainer) {
-        // Create standalone toggle container
-        const standaloneToggle = document.createElement('div');
-        standaloneToggle.className = 'd-flex justify-content-end mb-3';
-        standaloneToggle.id = 'standalone-details-toggle';
-        standaloneToggle.innerHTML = `
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="showDetailsToggleStandalone" ${showDetails ? 'checked' : ''}>
-                <label class="form-check-label" for="showDetailsToggleStandalone">
-                    <i class="bi bi-eye me-1"></i>Show Details
-                </label>
-            </div>
-        `;
-
-        // Insert after the header but before months
-        const monthsRow = document.querySelector('.months-row');
-        if (monthsRow) {
-            monthsRow.parentNode.insertBefore(standaloneToggle, monthsRow);
-        }
-    }
+    
 }
 
 function cleanupStandaloneToggle() {
