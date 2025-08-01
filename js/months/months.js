@@ -81,16 +81,34 @@ function Initialize() {
 function checkUrlParameters() {
     const urlParams = new URLSearchParams(window.location.search);
     const action = urlParams.get('action');
+    const urlMonth = urlParams.get('month');
+    const urlYear = urlParams.get('year');
 
-    if (action === 'add') {
+    // Check if we should auto-open the add month modal
+    if (action === 'add' || (urlMonth && urlYear)) {
         // Small delay to ensure modal is properly initialized
         setTimeout(() => {
             const addMonthModal = new bootstrap.Modal(document.getElementById('addMonthModal'));
             addMonthModal.show();
 
-            // Clear the URL parameter after opening the modal
+            // If we have month and year parameters, set them in the form
+            if (urlMonth && urlYear) {
+                const monthSelect = document.getElementById('monthSelect');
+                const yearInput = document.getElementById('yearInput');
+
+                if (monthSelect && urlMonth) {
+                    monthSelect.value = urlMonth.toLowerCase();
+                }
+                if (yearInput && urlYear) {
+                    yearInput.value = parseInt(urlYear);
+                }
+            }
+
+            // Clear the URL parameters after opening the modal
             const url = new URL(window.location);
             url.searchParams.delete('action');
+            url.searchParams.delete('month');
+            url.searchParams.delete('year');
             window.history.replaceState({}, '', url);
         }, 500);
     }
@@ -1576,7 +1594,11 @@ function resetAddMonthForm() {
         videoUrlInput.placeholder = 'https://youtube.com/watch?v=...';
     }
 
-    // Set current year and month as defaults
+    // Set defaults - check URL parameters first, then fall back to current date
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlMonth = urlParams.get('month');
+    const urlYear = urlParams.get('year');
+
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonthIndex = now.getMonth(); // 0 for January, 1 for February, etc.
@@ -1586,15 +1608,19 @@ function resetAddMonthForm() {
     ];
     const currentMonthName = monthNames[currentMonthIndex];
 
+    // Use URL parameters if available, otherwise use current date
+    const defaultYear = urlYear ? parseInt(urlYear) : currentYear;
+    const defaultMonth = urlMonth ? urlMonth.toLowerCase() : currentMonthName;
+
     if (yearInput) {
-        yearInput.value = currentYear;
+        yearInput.value = defaultYear;
     }
     if (monthSelect) {
-        monthSelect.value = currentMonthName;
+        monthSelect.value = defaultMonth;
 
-        // If the current month value didn't stick, try to find and set it
-        if (monthSelect.value !== currentMonthName) {
-            const monthOption = Array.from(monthSelect.options).find(option => option.value === currentMonthName);
+        // If the month value didn't stick, try to find and set it
+        if (monthSelect.value !== defaultMonth) {
+            const monthOption = Array.from(monthSelect.options).find(option => option.value === defaultMonth);
             if (monthOption) {
                 monthOption.selected = true;
             }
