@@ -17,6 +17,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let weightChart = null;
+let currentChartType = 'weight';
+let userMonthsData = [];
 
 document.addEventListener("DOMContentLoaded", () => {
     Initialize();
@@ -29,9 +31,18 @@ function Initialize() {
             return;
         }
 
-        await loadDashboardData(user.uid);
-        setupQuickActions();
-        updateDateTime();
+        // Ensure DOM is fully loaded before accessing elements
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', async () => {
+                await loadDashboardData(user.uid);
+                setupQuickActions();
+                updateDateTime();
+            });
+        } else {
+            await loadDashboardData(user.uid);
+            setupQuickActions();
+            updateDateTime();
+        }
     });
 }
 
@@ -73,6 +84,10 @@ async function loadDashboardData(userId) {
         updateStats(months);
         updateWeightChart(months);
         updateRecentMonths(months.slice(0, 2));
+        checkCurrentMonthStatus(months);
+
+        // Store months data globally for chart switching
+        userMonthsData = months;
 
     } catch (error) {
         console.error("Error loading dashboard data:", error);
@@ -85,7 +100,11 @@ function updateWelcomeMessage() {
     const hour = now.getHours();
     const userName = document.getElementById('user-name');
     const welcomeMessage = document.getElementById('welcome-message');
-    const icon = welcomeMessage.querySelector('i');
+
+    if (!userName || !welcomeMessage) {
+        console.warn('Welcome message elements not found');
+        return;
+    }
 
     let greeting = "Good evening";
     let iconClass = "bi-moon-stars";
@@ -98,20 +117,19 @@ function updateWelcomeMessage() {
         iconClass = "bi-sun";
     }
 
-    // Update icon
-    icon.className = `bi ${iconClass} me-2 text-warning`;
-
     // Get user name from auth or use placeholder
     const user = auth.currentUser;
+    let displayName = 'User';
+
     if (user) {
-        const displayName = user.displayName || user.email?.split('@')[0] || 'User';
-        userName.textContent = displayName;
+        displayName = user.displayName || user.email?.split('@')[0] || 'User';
         userName.classList.remove('skeleton', 'skeleton-text');
         userName.style.width = 'auto';
         userName.style.height = 'auto';
     }
 
-    welcomeMessage.innerHTML = `<i class="bi ${iconClass} me-2 text-warning"></i>${greeting}, <span id="user-name">${userName.textContent}</span>!`;
+    // Update the welcome message with the new content
+    welcomeMessage.innerHTML = `<i class="bi ${iconClass} me-2 text-warning"></i>${greeting}, <span id="user-name">${displayName}</span>!`;
 }
 
 function updateStats(months) {
@@ -119,7 +137,18 @@ function updateStats(months) {
     const currentWeightEl = document.getElementById('current-weight');
     const weightChangeEl = document.getElementById('weight-change');
     const totalMonthsEl = document.getElementById('total-months');
-    const avgRatingEl = document.getElementById('avg-rating');
+    const totalGymVisitsEl = document.getElementById('total-gym-visits');
+
+    // Check if all required elements exist
+    if (!currentWeightEl || !weightChangeEl || !totalMonthsEl || !totalGymVisitsEl) {
+        console.warn('Stats elements not found:', {
+            currentWeight: !!currentWeightEl,
+            weightChange: !!weightChangeEl,
+            totalMonths: !!totalMonthsEl,
+            totalGymVisits: !!totalGymVisitsEl
+        });
+        return;
+    }
 
     // Total months
     totalMonthsEl.innerHTML = months.length.toString();
@@ -130,10 +159,10 @@ function updateStats(months) {
     if (months.length === 0) {
         currentWeightEl.innerHTML = '--';
         weightChangeEl.innerHTML = '--';
-        avgRatingEl.innerHTML = '--';
+        totalGymVisitsEl.innerHTML = '--';
 
         // Remove skeleton classes
-        [currentWeightEl, weightChangeEl, avgRatingEl].forEach(el => {
+        [currentWeightEl, weightChangeEl, totalGymVisitsEl].forEach(el => {
             el.classList.remove('skeleton', 'skeleton-text');
             el.style.width = 'auto';
             el.style.height = 'auto';
@@ -155,16 +184,20 @@ function updateStats(months) {
     // Weight change calculation
     calculateWeightChange(months, weightChangeEl);
 
-    // Average rating
-    const ratingsSum = months.reduce((sum, month) => sum + (month.rating || 0), 0);
-    const avgRating = months.length > 0 ? (ratingsSum / months.length).toFixed(1) : 0;
-    avgRatingEl.innerHTML = avgRating.toString();
-    avgRatingEl.classList.remove('skeleton', 'skeleton-text');
-    avgRatingEl.style.width = 'auto';
-    avgRatingEl.style.height = 'auto';
+    // Total gym visits
+    const totalVisits = months.reduce((sum, month) => sum + (month.gymVisits || 0), 0);
+    totalGymVisitsEl.innerHTML = totalVisits.toString();
+    totalGymVisitsEl.classList.remove('skeleton', 'skeleton-text');
+    totalGymVisitsEl.style.width = 'auto';
+    totalGymVisitsEl.style.height = 'auto';
 }
 
 function calculateWeightChange(months, weightChangeEl) {
+    if (!weightChangeEl) {
+        console.warn('Weight change element not found');
+        return;
+    }
+
     const monthsWithWeight = months.filter(month => month.weight);
 
     if (monthsWithWeight.length < 2) {
@@ -190,47 +223,136 @@ function calculateWeightChange(months, weightChangeEl) {
 
     // Update the period text
     const periodEl = document.getElementById('weight-change-period');
-    periodEl.textContent = `Last ${monthsWithWeight.length} months`;
+    if (periodEl) {
+        periodEl.textContent = `Last ${monthsWithWeight.length} months`;
+    }
 }
 
 function updateWeightChart(months) {
-    const ctx = document.getElementById('weightChart').getContext('2d');
+    // Use the new chart switching function with default weight chart
+    updateChartWithType(months, currentChartType || 'weight');
+}
+
+// Chart switching functionality
+function switchChart(chartType) {
+    if (!userMonthsData || userMonthsData.length === 0) {
+        console.warn("No data available for chart switching");
+        return;
+    }
+
+    currentChartType = chartType;
+
+    // Update active button
+    const buttons = document.querySelectorAll('.btn-outline-primary');
+    buttons.forEach(btn => btn.classList.remove('active'));
+
+    const activeButton = document.querySelector(`[onclick="switchChart('${chartType}')"]`);
+    if (activeButton) {
+        activeButton.classList.add('active');
+    }
+
+    // Update chart title
+    const chartTitle = document.getElementById('chart-title');
+    if (chartTitle) {
+        switch (chartType) {
+            case 'weight':
+                chartTitle.textContent = 'Weight Progress';
+                break;
+            case 'visits':
+                chartTitle.textContent = 'Gym Visits Progress';
+                break;
+            case 'rating':
+                chartTitle.textContent = 'Monthly Ratings Progress';
+                break;
+        }
+    }
+
+    // Update chart with new data
+    updateChartWithType(userMonthsData, chartType);
+}
+
+// Make switchChart available globally for onclick handlers
+window.switchChart = switchChart;
+
+// Updated chart function to handle different data types
+function updateChartWithType(months, chartType = 'weight') {
+    const ctx = document.getElementById('weightChart');
     const skeleton = document.getElementById('chart-skeleton');
 
-    // Get months with weight data from last 6 months
-    const monthsWithWeight = months
-        .filter(month => month.weight)
-        .slice(0, 6)
-        .reverse(); // Reverse to show chronological order
+    if (!ctx || !skeleton) {
+        console.warn('Chart elements not found');
+        return;
+    }
 
-    if (monthsWithWeight.length === 0) {
+    const canvasContext = ctx.getContext('2d');
+
+    // Get months with data for the selected chart type
+    let monthsWithData;
+    switch (chartType) {
+        case 'weight':
+            monthsWithData = months.filter(month => month.weight);
+            break;
+        case 'visits':
+            monthsWithData = months.filter(month => month.gymVisits !== undefined);
+            break;
+        case 'rating':
+            monthsWithData = months.filter(month => month.rating);
+            break;
+        default:
+            monthsWithData = months.filter(month => month.weight);
+    }
+
+    monthsWithData = monthsWithData.slice(0, 6).reverse(); // Last 6 months, chronological order
+
+    if (monthsWithData.length === 0) {
         // Hide skeleton and show no data message
         skeleton.style.display = 'none';
-        ctx.canvas.style.display = 'block';
+        ctx.style.display = 'block';
 
         if (weightChart) {
             weightChart.destroy();
         }
 
         // Show "No data" text on canvas
-        ctx.font = '16px Arial';
-        ctx.fillStyle = '#6c757d';
-        ctx.textAlign = 'center';
-        ctx.fillText('No weight data available', ctx.canvas.width / 2, ctx.canvas.height / 2);
+        canvasContext.font = '16px Arial';
+        canvasContext.fillStyle = '#6c757d';
+        canvasContext.textAlign = 'center';
+        canvasContext.fillText(`No ${chartType} data available`, ctx.width / 2, ctx.height / 2);
         return;
     }
 
     // Prepare chart data
-    const labels = monthsWithWeight.map(month => {
+    const labels = monthsWithData.map(month => {
         const monthName = month.month.charAt(0).toUpperCase() + month.month.slice(1);
         return `${monthName} ${month.year}`;
     });
 
-    const weights = monthsWithWeight.map(month => month.weight);
+    let data, label, borderColor, backgroundColor;
+
+    switch (chartType) {
+        case 'weight':
+            data = monthsWithData.map(month => month.weight);
+            label = 'Weight (kg)';
+            borderColor = '#8b5cf6';
+            backgroundColor = 'rgba(139, 92, 246, 0.1)';
+            break;
+        case 'visits':
+            data = monthsWithData.map(month => month.gymVisits || 0);
+            label = 'Gym Visits';
+            borderColor = '#10b981';
+            backgroundColor = 'rgba(16, 185, 129, 0.1)';
+            break;
+        case 'rating':
+            data = monthsWithData.map(month => month.rating);
+            label = 'Rating (1-10)';
+            borderColor = '#ef4444';
+            backgroundColor = 'rgba(239, 68, 68, 0.1)';
+            break;
+    }
 
     // Hide skeleton and show chart
     skeleton.style.display = 'none';
-    ctx.canvas.style.display = 'block';
+    ctx.style.display = 'block';
 
     // Destroy existing chart
     if (weightChart) {
@@ -238,19 +360,19 @@ function updateWeightChart(months) {
     }
 
     // Create new chart
-    weightChart = new Chart(ctx, {
+    weightChart = new Chart(canvasContext, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Weight (kg)',
-                data: weights,
-                borderColor: '#0d6efd',
-                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                label: label,
+                data: data,
+                borderColor: borderColor,
+                backgroundColor: backgroundColor,
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
-                pointBackgroundColor: '#0d6efd',
+                pointBackgroundColor: borderColor,
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2,
                 pointRadius: 6,
@@ -267,7 +389,7 @@ function updateWeightChart(months) {
             },
             scales: {
                 y: {
-                    beginAtZero: false,
+                    beginAtZero: chartType === 'visits' || chartType === 'rating',
                     grid: {
                         color: 'rgba(0,0,0,0.1)'
                     },
@@ -401,17 +523,59 @@ function getRatingBadgeClass(rating) {
     return 'bg-danger';
 }
 
+function checkCurrentMonthStatus(months) {
+    const fillCurrentMonthBtn = document.getElementById('fill-current-month-btn');
+    const fillMonthText = document.getElementById('fill-month-text');
+
+    if (!fillCurrentMonthBtn || !fillMonthText) return;
+
+    const now = new Date();
+    const currentMonth = now.toLocaleDateString('en-US', { month: 'long' }).toLowerCase();
+    const currentYear = now.getFullYear();
+
+    // Check if current month exists in user's months
+    const currentMonthExists = months.some(month =>
+        month.month?.toLowerCase() === currentMonth && month.year === currentYear
+    );
+
+    if (!currentMonthExists) {
+        // Show the button and update text
+        fillCurrentMonthBtn.style.display = 'flex';
+        const monthName = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
+        fillMonthText.textContent = `Fill ${monthName} ${currentYear}`;
+    } else {
+        // Hide the button
+        fillCurrentMonthBtn.style.display = 'none';
+    }
+}
+
 function setupQuickActions() {
     const addMonthBtn = document.getElementById('add-month-btn');
+    const fillCurrentMonthBtn = document.getElementById('fill-current-month-btn');
 
     addMonthBtn.addEventListener('click', () => {
         // Redirect to months page with a URL parameter to open the modal
         window.location.href = 'months.html?action=add';
     });
+
+    if (fillCurrentMonthBtn) {
+        fillCurrentMonthBtn.addEventListener('click', () => {
+            // Redirect to months page with current month pre-filled
+            const now = new Date();
+            const currentMonth = now.toLocaleDateString('en-US', { month: 'long' }).toLowerCase();
+            const currentYear = now.getFullYear();
+            window.location.href = `months.html?action=add&month=${currentMonth}&year=${currentYear}`;
+        });
+    }
 }
 
 function updateDateTime() {
     const currentDateEl = document.getElementById('current-date');
+    if (!currentDateEl) {
+        console.warn('Current date element not found');
+        return;
+    }
+
     const now = new Date();
     const options = {
         weekday: 'long',

@@ -22,24 +22,24 @@
                 const htmlElement = document.documentElement;
                 if (theme === 'dark') {
                     htmlElement.setAttribute('data-bs-theme', 'dark');
-                    if (document.body) {
+                    if (document.body && document.body.classList) {
                         document.body.classList.add('bg-dark');
                     }
                 } else if (theme === 'light') {
                     htmlElement.setAttribute('data-bs-theme', 'light');
-                    if (document.body) {
+                    if (document.body && document.body.classList) {
                         document.body.classList.remove('bg-dark');
                     }
                 } else if (theme === 'auto') {
                     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                     if (prefersDark) {
                         htmlElement.setAttribute('data-bs-theme', 'dark');
-                        if (document.body) {
+                        if (document.body && document.body.classList) {
                             document.body.classList.add('bg-dark');
                         }
                     } else {
                         htmlElement.setAttribute('data-bs-theme', 'light');
-                        if (document.body) {
+                        if (document.body && document.body.classList) {
                             document.body.classList.remove('bg-dark');
                         }
                     }
@@ -125,7 +125,7 @@
                         <div class="d-flex gap-2 justify-content-center">
                             <button class="btn btn-outline-primary btn-sm flex-fill" id="ProfileBtn"
                                 style="font-size: 0.8rem;">
-                                See your profile
+                                View Profile
                             </button>
                             <button class="btn btn-outline-danger btn-sm" id="sidebar-logout-btn" title="Sign Out">
                                 <i class="bi bi-box-arrow-right"></i>
@@ -158,10 +158,11 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
                                 <h2 class="mb-1">
-                                    <i class="bi bi-sun me-2 text-warning"></i>
-                                    <span id="welcome-message">Good morning, <span id="user-name"
+                                    <span id="welcome-message">
+                                        <i class="bi bi-sun me-2 text-warning"></i>Good morning, <span id="user-name"
                                             class="skeleton skeleton-text d-inline-block"
-                                            style="width: 100px; height: 28px;">User</span>!</span>
+                                            style="width: 100px; height: 28px;">User</span>!
+                                    </span>
                                 </h2>
                                 <p class="text-muted mb-0" id="welcome-subtitle">Here's your fitness journey overview
                                 </p>
@@ -177,68 +178,69 @@
                 <div class="row mb-4">
                     <!-- Current Weight Card -->
                     <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center">
+                        <div class="card h-100 border-0 shadow-sm"
+                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <div class="card-body text-center text-white">
                                 <div class="d-flex align-items-center justify-content-center mb-2">
-                                    <i class="bi bi-speedometer2 text-primary me-2" style="font-size: 1.5rem;"></i>
-                                    <h6 class="card-title mb-0">Current Weight</h6>
+                                    <i class="bi bi-speedometer2 me-2" style="font-size: 1.5rem;"></i>
+                                    <h6 class="card-title mb-0 text-white">Current Weight</h6>
                                 </div>
-                                <h3 class="mb-1" id="current-weight">
-                                    <span class="skeleton skeleton-text d-inline-block"
-                                        style="width: 80px; height: 32px;">--</span>
+                                <h3 class="mb-1 text-white" id="current-weight"
+                                    class="skeleton skeleton-text d-inline-block" style="width: 80px; height: 32px;">--
                                 </h3>
-                                <small class="text-muted" id="weight-unit">kg</small>
+                                <small class="text-white-50" id="weight-unit">kg</small>
                             </div>
                         </div>
                     </div>
 
                     <!-- Weight Change Card -->
                     <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center">
+                        <div class="card h-100 border-0 shadow-sm"
+                            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                            <div class="card-body text-center text-white">
                                 <div class="d-flex align-items-center justify-content-center mb-2">
-                                    <i class="bi bi-graph-up text-success me-2" style="font-size: 1.5rem;"></i>
-                                    <h6 class="card-title mb-0">Weight Change</h6>
+                                    <i class="bi bi-graph-up me-2" style="font-size: 1.5rem;"></i>
+                                    <h6 class="card-title mb-0 text-white">Weight Change</h6>
                                 </div>
-                                <h3 class="mb-1" id="weight-change">
-                                    <span class="skeleton skeleton-text d-inline-block"
-                                        style="width: 80px; height: 32px;">--</span>
+                                <h3 class="mb-1 text-white" id="weight-change"
+                                    class="skeleton skeleton-text d-inline-block" style="width: 80px; height: 32px;">--
                                 </h3>
-                                <small class="text-muted" id="weight-change-period">Last 3 months</small>
+                                <small class="text-white-50" id="weight-change-period">Last 3 months</small>
                             </div>
                         </div>
                     </div>
 
                     <!-- Total Months Card -->
                     <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center">
+                        <div class="card h-100 border-0 shadow-sm"
+                            style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                            <div class="card-body text-center text-white">
                                 <div class="d-flex align-items-center justify-content-center mb-2">
-                                    <i class="bi bi-calendar-check text-info me-2" style="font-size: 1.5rem;"></i>
-                                    <h6 class="card-title mb-0">Total Months</h6>
+                                    <i class="bi bi-calendar-check me-2" style="font-size: 1.5rem;"></i>
+                                    <h6 class="card-title mb-0 text-white">Total Months</h6>
                                 </div>
-                                <h3 class="mb-1" id="total-months">
-                                    <span class="skeleton skeleton-text d-inline-block"
-                                        style="width: 60px; height: 32px;">--</span>
+                                <h3 class="mb-1 text-white" id="total-months"
+                                    class="skeleton skeleton-text d-inline-block" style="width: 60px; height: 32px;">--
                                 </h3>
-                                <small class="text-muted">Tracked</small>
+                                <small class="text-white-50">Tracked</small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Avg Rating Card -->
+                    <!-- Total Gym Visits Card -->
                     <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center">
+                        <div class="card h-100 border-0 shadow-sm"
+                            style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                            <div class="card-body text-center text-dark">
                                 <div class="d-flex align-items-center justify-content-center mb-2">
-                                    <i class="bi bi-star-fill text-warning me-2" style="font-size: 1.5rem;"></i>
-                                    <h6 class="card-title mb-0">Average Rating</h6>
+                                    <i class="bi bi-calendar-check me-2" style="font-size: 1.5rem;"></i>
+                                    <h6 class="card-title mb-0 text-dark">Total Gym Visits</h6>
                                 </div>
-                                <h3 class="mb-1" id="avg-rating">
+                                <h3 class="mb-1 text-dark" id="total-gym-visits">
                                     <span class="skeleton skeleton-text d-inline-block"
                                         style="width: 60px; height: 32px;">--</span>
                                 </h3>
-                                <small class="text-muted">Out of 10</small>
+                                <small class="text-dark">Visits</small>
                             </div>
                         </div>
                     </div>
@@ -250,10 +252,23 @@
                     <div class="col-lg-8 mb-4">
                         <div class="card border-0 shadow-sm h-100">
                             <div class="card-header bg-transparent border-0 pb-0">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-graph-up me-2 text-primary"></i>Weight Progress
-                                </h5>
-                                <small class="text-muted">Last 6 months</small>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="card-title mb-0">
+                                            <i class="bi bi-graph-up me-2 text-primary"></i><span
+                                                id="chart-title">Weight Progress</span>
+                                        </h5>
+                                        <small class="text-muted">Last 6 months</small>
+                                    </div>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-primary btn-sm active"
+                                            id="weight-chart-btn" onclick="switchChart('weight')">Weight</button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                            id="visits-chart-btn" onclick="switchChart('visits')">Visits</button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                            id="rating-chart-btn" onclick="switchChart('rating')">Rating</button>
+                                    </div>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div class="position-relative">
@@ -275,6 +290,13 @@
                                 </h5>
                             </div>
                             <div class="card-body d-flex flex-column">
+                                <!-- Fill Current Month Button (conditionally shown) -->
+                                <button
+                                    class="btn btn-success btn-lg mb-3 d-flex align-items-center justify-content-center"
+                                    id="fill-current-month-btn" style="display: none;">
+                                    <i class="bi bi-calendar-plus me-2"></i>
+                                    <span id="fill-month-text">Fill Current Month</span>
+                                </button>
                                 <button
                                     class="btn btn-primary btn-lg mb-3 d-flex align-items-center justify-content-center"
                                     id="add-month-btn">
@@ -289,9 +311,9 @@
                                 </button>
                                 <button
                                     class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
-                                    onclick="window.location.href='settings.html'">
-                                    <i class="bi bi-gear me-2"></i>
-                                    Settings
+                                    onclick="window.location.href='profile.html'">
+                                    <i class="bi bi-person me-2"></i>
+                                    View Profile
                                 </button>
                             </div>
                         </div>
