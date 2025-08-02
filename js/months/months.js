@@ -271,7 +271,7 @@ function setupYearFilterButtons(months) {
     }
 
     yearFilterContainer.style.display = 'flex';
-    
+
     // Clean up standalone toggle since year filter is now shown
     cleanupStandaloneToggle();
 
@@ -331,7 +331,7 @@ function showDetailsToggleAlone() {
     // Show the toggle outside the year filter when year filter is hidden
     const mainContainer = document.querySelector('.container-fluid.mt-4.px-4.pb-4');
 
-    
+
 }
 
 function cleanupStandaloneToggle() {

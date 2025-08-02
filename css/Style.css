@@ -194,6 +194,20 @@ span:not(.skeleton) {
     flex-direction: column;
 }
 
+.month-post-image {
+    width: 25%;
+    max-height: 500px;
+    object-fit: cover;
+    margin: 0 auto;
+    border-radius: 10px;
+    display: block;
+}
+
+/* Card body spacing fix */
+.card-body {
+    padding: 1rem;
+}
+
 .month-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
@@ -993,19 +1007,26 @@ body:not(.modal-open) .modal-backdrop {
     transform: scale(1.02);
 }
 
-/* Feed layout styles */
-#feed-posts .card {
-    transition: all 0.3s ease;
+/* Transformation post images */
+.transformation-image {
+    width: 50% !important;
+    max-height: 400px;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto;
+    border-radius: 10px;
 }
 
-#feed-posts .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
+/* Responsive adjustments for transformation images */
+@media (max-width: 768px) {
+    .transformation-image {
+        max-height: 300px;
+    }
 
-/* Create post section styling */
-.create-post-section {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    .transformation-post .col-6 {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
 }
 
 /* Character counter styles */
@@ -1013,19 +1034,21 @@ body:not(.modal-open) .modal-backdrop {
     font-size: 0.75rem;
 }
 
-/* Modal improvements */
-.modal-lg {
-    max-width: 900px;
+/* Make feed container more compact */
+.container-fluid.pt-4.px-4 {
+    padding-top: 1rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    max-width: 1500px;
 }
 
-#createPostModal .modal-body {
-    max-height: 70vh;
-    overflow-y: auto;
-}
-
-/* Toast improvements */
-.toast-container .toast {
-    backdrop-filter: blur(10px);
+/* Responsive adjustments for feed container */
+@media (max-width: 768px) {
+    .container-fluid.pt-4.px-4 {
+        padding-top: 0.5rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
 }
 
 /* Dark mode styles for feed */
@@ -1037,10 +1060,6 @@ body:not(.modal-open) .modal-backdrop {
 [data-bs-theme="dark"] .post-type-card:hover {
     background-color: rgba(0, 123, 255, 0.1);
     border-color: #007bff !important;
-}
-
-[data-bs-theme="dark"] .create-post-section {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
 }
 
 [data-bs-theme="dark"] #transformation-preview .card {

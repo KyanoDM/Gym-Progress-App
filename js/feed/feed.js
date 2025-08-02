@@ -31,6 +31,7 @@ let selectedAfterImage = '';
 document.addEventListener("DOMContentLoaded", () => {
     checkOnboarding();
     setupPostCreation();
+    loadFeedPosts(); // Add this to load posts when page loads
 });
 
 function checkOnboarding() {
@@ -547,8 +548,8 @@ async function createPost() {
         const modal = bootstrap.Modal.getInstance(document.getElementById('createPostModal'));
         modal.hide();
 
-        // Refresh feed (placeholder for now)
-        // loadFeedPosts();
+        // Refresh feed to show the new post
+        loadFeedPosts();
 
     } catch (error) {
         console.error('Error creating post:', error);
@@ -620,3 +621,241 @@ function showToast(type, message) {
         toast.remove();
     });
 }
+
+// Feed loading functions
+async function loadFeedPosts() {
+    const feedContainer = document.getElementById('feed-posts');
+
+    try {
+        // Show loading state
+        showFeedLoading(feedContainer);
+
+        // Load posts from Firestore
+        const postsRef = collection(db, "posts");
+        const q = query(postsRef, orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        const posts = [];
+        querySnapshot.forEach((doc) => {
+            posts.push({ id: doc.id, ...doc.data() });
+        });
+
+        // Clear loading and display posts
+        feedContainer.innerHTML = '';
+
+        if (posts.length === 0) {
+            showEmptyFeedMessage(feedContainer);
+        } else {
+            posts.forEach(post => {
+                const postElement = createPostElement(post);
+                feedContainer.appendChild(postElement);
+            });
+        }
+
+    } catch (error) {
+        console.error('Error loading feed posts:', error);
+        showFeedError(feedContainer);
+    }
+}
+
+function showFeedLoading(container) {
+    container.innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h5 class="mt-3 text-muted">Loading posts...</h5>
+        </div>
+    `;
+}
+
+function showEmptyFeedMessage(container) {
+    container.innerHTML = `
+        <div class="text-center py-5">
+            <i class="bi bi-rss text-muted" style="font-size: 3rem;"></i>
+            <h5 class="mt-3 text-muted">No posts yet</h5>
+            <p class="text-muted">Follow other users or create your first post to see content here!</p>
+        </div>
+    `;
+}
+
+function showFeedError(container) {
+    container.innerHTML = `
+        <div class="text-center py-5">
+            <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+            <h5 class="mt-3">Error loading posts</h5>
+            <button class="btn btn-outline-primary mt-2" onclick="loadFeedPosts()">
+                <i class="bi bi-arrow-clockwise me-2"></i>Try again
+            </button>
+        </div>
+    `;
+}
+
+function createPostElement(post) {
+    const postDiv = document.createElement('div');
+    postDiv.className = 'card shadow-sm';
+
+    const timeAgo = getTimeAgo(post.createdAt);
+    const userName = post.userDisplayName || 'Anonymous';
+    const userAvatar = post.userPhotoURL || null;
+
+    if (post.type === 'month') {
+        postDiv.innerHTML = createMonthPostHTML(post, userName, userAvatar, timeAgo);
+    } else if (post.type === 'transformation') {
+        postDiv.innerHTML = createTransformationPostHTML(post, userName, userAvatar, timeAgo);
+    }
+
+    return postDiv;
+}
+
+function createMonthPostHTML(post, userName, userAvatar, timeAgo) {
+    const monthName = post.monthData.month ?
+        post.monthData.month.charAt(0).toUpperCase() + post.monthData.month.slice(1) : 'Unknown';
+
+    const avatarHTML = userAvatar ?
+        `<img src="${userAvatar}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">` :
+        `<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">${userName.charAt(0).toUpperCase()}</div>`;
+
+    return `
+        <div class="card-header border-0 pb-0">
+            <div class="d-flex align-items-center">
+                ${avatarHTML}
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 fw-bold">${userName}</h6>
+                    <small class="text-muted">
+                        <i class="bi bi-calendar-check me-1"></i>
+                        Shared ${monthName} ${post.monthData.year} • ${timeAgo}
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="card-body pt-3">
+            ${post.text ? `<p class="mb-3">${post.text}</p>` : ''}
+            <div class="position-relative">
+                <img src="${post.imageUrl}" class="img-fluid rounded month-post-image">
+
+            </div>
+            <div class="row mt-3 text-center">
+                ${post.monthData.weight ? `
+                <div class="col-4">
+                    <div class="border-end">
+                        <strong class="d-block">${post.monthData.weight} kg</strong>
+                        <small class="text-muted">Weight</small>
+                    </div>
+                </div>` : ''}
+                ${post.monthData.gymVisits ? `
+                <div class="col-4">
+                    <div class="border-end">
+                        <strong class="d-block">${post.monthData.gymVisits}</strong>
+                        <small class="text-muted">Gym Visits</small>
+                    </div>
+                </div>` : ''}
+                ${post.monthData.rating ? `
+                <div class="col-4">
+                    <strong class="d-block">${post.monthData.rating}/10</strong>
+                    <small class="text-muted">Rating</small>
+                </div>` : ''}
+            </div>
+        </div>
+        <div class="card-footer border-0 pt-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-3">
+                    <button class="btn btn-link p-0 text-muted">
+                        <i class="bi bi-heart me-1"></i>${post.likes ? post.likes.length : 0}
+                    </button>
+                    <button class="btn btn-link p-0 text-muted">
+                        <i class="bi bi-chat me-1"></i>${post.comments ? post.comments.length : 0}
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createTransformationPostHTML(post, userName, userAvatar, timeAgo) {
+    const beforeMonthName = post.beforeMonth.month ?
+        post.beforeMonth.month.charAt(0).toUpperCase() + post.beforeMonth.month.slice(1) : 'Unknown';
+    const afterMonthName = post.afterMonth.month ?
+        post.afterMonth.month.charAt(0).toUpperCase() + post.afterMonth.month.slice(1) : 'Unknown';
+
+    const avatarHTML = userAvatar ?
+        `<img src="${userAvatar}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">` :
+        `<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">${userName.charAt(0).toUpperCase()}</div>`;
+
+    const weightChange = post.beforeMonth.weight && post.afterMonth.weight ?
+        (post.afterMonth.weight - post.beforeMonth.weight).toFixed(1) : null;
+
+    return `
+        <div class="card-header border-0 pb-0">
+            <div class="d-flex align-items-center">
+                ${avatarHTML}
+                <div class="flex-grow-1">
+                    <h6 class="mb-0 fw-bold">${userName}</h6>
+                    <small class="text-muted">
+                        <i class="bi bi-arrow-left-right me-1"></i>
+                        Transformation Post • ${timeAgo}
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="card-body pt-3">
+            <p class="mb-3">${post.text}</p>
+           <div class="row transformation-post">
+            <div class="col-6">
+                <div class="text-center">
+                    <h6 class="mb-2 text-muted">BEFORE</h6>
+                    <img src="${post.beforeImage}" class="img-fluid transformation-image">
+                    ...
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="text-center">
+                    <h6 class="mb-2 text-muted">AFTER</h6>
+                    <img src="${post.afterImage}" class="img-fluid transformation-image">
+                    ...
+                </div>
+            </div>
+        </div>
+
+            ${weightChange ? `
+            <div class="text-center mt-3">
+                <span class="badge ${weightChange > 0 ? 'bg-success' : 'bg-primary'} fs-6">
+                    ${weightChange > 0 ? '+' : ''}${weightChange} kg change
+                </span>
+            </div>` : ''}
+        </div>
+        <div class="card-footer border-0 pt-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-3">
+                    <button class="btn btn-link p-0 text-muted">
+                        <i class="bi bi-heart me-1"></i>${post.likes ? post.likes.length : 0}
+                    </button>
+                    <button class="btn btn-link p-0 text-muted">
+                        <i class="bi bi-chat me-1"></i>${post.comments ? post.comments.length : 0}
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function getTimeAgo(timestamp) {
+    if (!timestamp) return 'just now';
+
+    const now = new Date();
+    const postTime = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const diffInMs = now - postTime;
+    const diffInMin = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInMin < 1) return 'just now';
+    if (diffInMin < 60) return `${diffInMin}m ago`;
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+
+    return postTime.toLocaleDateString();
+}
+
+// Make loadFeedPosts globally accessible for retry button
+window.loadFeedPosts = loadFeedPosts;
