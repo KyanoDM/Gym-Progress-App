@@ -451,10 +451,8 @@ function createRecentMonthCard(month) {
     const monthName = month.month ? month.month.charAt(0).toUpperCase() + month.month.slice(1) : 'Unknown';
     const year = month.year || new Date().getFullYear();
     const rating = month.rating || 5;
-    const ratingClass = getRatingBadgeClass(rating);
-
-    // Get cover image
-    let coverImage = 'Image/img.jpg';
+    const ratingClass = getRatingBadgeClass(rating);    // Get cover image
+    let coverImage = 'Image/user.png';
     if (month.coverURL) {
         coverImage = month.coverURL;
     } else if (month.imageUrls && month.imageUrls.length > 0) {
@@ -470,7 +468,7 @@ function createRecentMonthCard(month) {
                         <img src="${coverImage}" class="img-fluid h-100 w-100 rounded-start" 
                              style="object-fit: cover; display: none;" 
                              onload="this.previousElementSibling.style.display='none'; this.style.display='block';"
-                             onerror="this.src='Image/img.jpg'; this.previousElementSibling.style.display='none'; this.style.display='block';"
+                             onerror="this.src='Image/user.png'; this.previousElementSibling.style.display='none'; this.style.display='block';"
                              alt="${monthName} ${year}">
                     </div>
                 </div>

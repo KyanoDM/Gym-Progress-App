@@ -86,7 +86,7 @@ async function handleUserSearch(queryText) {
                 id: doc.id,
                 username: data.account?.username,
                 name: data.account?.name,
-                photoURL: data.account?.photoURL || "Image/img.jpg",
+                photoURL: data.account?.photoURL || "Image/user.png",
                 isVerified: data.account?.isVerified,
                 isAdmin: data.account?.isAdmin,
                 isOwner: data.account?.isOwner
@@ -158,7 +158,7 @@ onAuthStateChanged(auth, async (user) => {
             sidebarAvatarImg.style.display = "block";
             sidebarAvatarWrapper.classList.remove("skeleton", "skeleton-circle", "skeleton-avatar-lg");
         };
-        sidebarAvatarImg.src = user.photoURL || "Image/img.jpg";
+        sidebarAvatarImg.src = user.photoURL || "Image/user.png";
     }
 
     // For followers/following counts — skeleton classes already applied in HTML

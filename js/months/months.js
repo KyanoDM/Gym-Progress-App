@@ -446,7 +446,7 @@ function createMonthCard(month) {
     monthCol.className = 'months-col';
 
     // Get the cover image - handle different possible data structures
-    let coverImage = 'Image/img.jpg'; // fallback image
+    let coverImage = 'Image/user.png'; // fallback image
 
     if (month.coverURL) {
         coverImage = month.coverURL;
@@ -501,10 +501,9 @@ function createMonthCard(month) {
             </div>
             <div class="card-body p-0">
                 <div class="position-relative">
-                    <div class="image-skeleton skeleton" style="height: 320px; display: block;"></div>
-                    <img src="${coverImage}" class="card-img-top" alt="${monthName} Progress" 
+                    <div class="image-skeleton skeleton" style="height: 320px; display: block;"></div>                    <img src="${coverImage}" class="card-img-top" alt="${monthName} Progress" 
                          style="height: 320px; object-fit: cover; display: none;" 
-                         onerror="this.src='Image/img.jpg'"
+                         onerror="this.src='Image/user.png'"
                          onload="handleImageLoad(this)">
                 </div>
                 <div class="p-3">
@@ -1119,9 +1118,8 @@ function loadActualImages(month, container) {
             // Remove skeleton and show image
             skeletonDiv.remove();
             img.style.display = 'block';
-        };
-        img.onerror = () => {
-            img.src = 'Image/img.jpg';
+        };        img.onerror = () => {
+            img.src = 'Image/user.png';
             // The onload will still fire with the fallback image
         };
 
