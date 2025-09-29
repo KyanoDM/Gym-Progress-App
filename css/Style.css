@@ -1,5 +1,4 @@
 body {
-
     overflow: hidden;
 }
 
@@ -8,46 +7,6 @@ body {
     visibility: hidden !important;
     opacity: 0 !important;
     pointer-events: none !important;
-}
-
-.form-container {
-    max-width: 400px;
-    width: 100%;
-}
-
-
-.bb {
-    position: absolute;
-    bottom: 0;
-    height: auto;
-    z-index: -1;
-}
-
-.sam {
-    transform: translateX(10%);
-    left: 50%;
-    width: 40%;
-}
-
-.cbum {
-    width: 50%;
-    transform: translateX(10%);
-}
-
-footer {
-    position: absolute;
-    bottom: 0;
-    left: 47%;
-}
-
-@media (max-width: 700px) {
-    .bb {
-        display: none;
-    }
-}
-
-.OrwEmail {
-    color: rgba(128, 128, 128, 0.685);
 }
 
 #side-nav .nav-link {
@@ -1528,4 +1487,40 @@ body:not(.modal-open) .modal-backdrop {
         padding: 0.875rem 1rem;
         font-size: 1rem;
     }
+}
+
+/* Navbar Logo Styles */
+.navbar-logo {
+    width: 200px;
+    height: 80px;
+    object-fit: contain;
+    border-radius: 12px;
+    margin: 0 auto;
+    display: block;
+}
+
+.navbar-logo-small {
+    width: 80px;
+    height: 50px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin: 0 auto;
+    display: block;
+}
+
+/* Form Container for Onboarding */
+.form-container {
+    max-width: 400px;
+    width: 100%;
+}
+
+/* Logo Container Styling */
+.logo-container {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 0;
+}
+
+.logo-container .mb-3 {
+    margin-bottom: 1.5rem !important;
 }
