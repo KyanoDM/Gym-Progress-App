@@ -2356,8 +2356,8 @@ async function uploadVideoWithProgress(videoFile, userId, month, year) {
     if (!videoFile) return { url: '', type: '' };
 
     // Check file size
-    if (videoFile.size > 200 * 1024 * 1024) {
-        throw new Error('Video file is too large. Maximum size is 200MB.');
+    if (videoFile.size > 400 * 1024 * 1024) {
+        throw new Error('Video file is too large. Maximum size is 400MB.');
     }
 
     updateProgress(50, `<div class="progress-step"><i class="bi bi-play-circle me-1"></i>Uploading video: ${videoFile.name}</div>`);
