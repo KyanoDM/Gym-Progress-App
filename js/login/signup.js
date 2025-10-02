@@ -97,14 +97,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-
-            // Update display name
+            const user = userCredential.user;            // Update display name
             await updateProfile(user, {
                 displayName: name,
-                photoURL: "Image/img.jpg"
+                photoURL: "Image/user.png"
             });
-
 
             // Store user in Firestore
             const userRef = doc(db, "users", user.uid);
@@ -114,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     email: email,
                     createdAt: new Date(),
                     lastLogin: new Date(),
-                    photoURL: "Image/img.jpg",
+                    photoURL: "Image/user.png",
                     username: "Guest",
                     isVerified: false,
                     isAdmin: false,

@@ -82,21 +82,20 @@ function loadCurrentUserData() {
                 profilePic.onload = () => {
                     // Hide skeleton background by removing the class
                     const wrapper = document.getElementById("profile-pic-wrapper");
-                    if (wrapper) {
-                        wrapper.classList.remove("skeleton-circle");
+                    if (wrapper) {                wrapper.classList.remove("skeleton-circle");
                     }
                     profilePic.classList.add("loaded");
                 };
-                profilePic.src = user.photoURL || "Image/img.jpg";
+                profilePic.src = user.photoURL || "Image/user.png";
             }
 
             const profilePicElements = document.querySelectorAll(".profile-pic");
             profilePicElements.forEach(img => {
-                img.src = user.photoURL || "Image/img.jpg";
+                img.src = user.photoURL || "Image/user.png";
             });
 
             document.querySelectorAll("#user-avatar").forEach(img => {
-                img.src = user.photoURL || "Image/img.jpg";
+                img.src = user.photoURL || "Image/user.png";
                 img.classList.remove("d-none");
             });
 
@@ -278,9 +277,8 @@ function setupProfileForm() {
             const updates = {};
 
             // Delete old photo if uploading new one
-            if (tempUploadedPhotoURL) {
-                const oldPhotoURL = user.photoURL;
-                if (oldPhotoURL && !oldPhotoURL.includes("Image/img.jpg")) { // assuming this is default image URL
+            if (tempUploadedPhotoURL) {                const oldPhotoURL = user.photoURL;
+                if (oldPhotoURL && !oldPhotoURL.includes("Image/user.png")) { // assuming this is default image URL
                     try {
                         const url = new URL(oldPhotoURL);
                         const path = decodeURIComponent(url.pathname.split('/o/')[1].split('?')[0]);
@@ -335,7 +333,7 @@ function setupProfileForm() {
                 await updateDoc(userDocRef, updates);
             }
 
-            const newPhotoURL = updates["account.photoURL"] || user.photoURL || "Image/img.jpg";
+            const newPhotoURL = updates["account.photoURL"] || user.photoURL || "Image/user.png";
             document.querySelectorAll(".profile-pic").forEach(img => img.src = newPhotoURL);
             document.querySelectorAll("#user-avatar").forEach(img => {
                 img.src = newPhotoURL;

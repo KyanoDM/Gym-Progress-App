@@ -41,11 +41,9 @@ async function fillProfile(currentUser) {
 
     let viewedProfileAccount = {};
 
-    const isOwnProfile = !profileUid || profileUid === currentUser.uid;
-
-    let name = "Unknown";
+    const isOwnProfile = !profileUid || profileUid === currentUser.uid;    let name = "Unknown";
     let username = "unknown";
-    let photoURL = "Image/img.jpg";
+    let photoURL = "Image/user.png";
     let viewedProfileFollowerCount = 0;
     let viewedProfileFollowingCount = 0;
     let currentUserFollowingCount = 0;
