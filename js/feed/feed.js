@@ -13,7 +13,10 @@ import {
     getDocs,
     addDoc,
     serverTimestamp,
-    where
+    where,
+    updateDoc,
+    arrayUnion,
+    arrayRemove
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 const db = getFirestore(app);
@@ -782,7 +785,35 @@ function createPostElement(post) {
         postDiv.innerHTML = createTransformationPostHTML(post, userName, userAvatar, timeAgo);
     }
 
+    // Apply like state for the current user (fill heart if liked)
+    applyLikeState(post, postDiv);
+
     return postDiv;
+}
+
+function applyLikeState(post, postElement) {
+    try {
+        const currentUser = auth.currentUser;
+        const postId = post.id;
+        const likes = post.likes || [];
+        const btns = postElement.querySelectorAll(`.like-button[data-post-id="${postId}"]`);
+        btns.forEach(b => {
+            const icon = b.querySelector('i.bi-heart');
+            const countSpan = b.querySelector('.like-count');
+            countSpan.textContent = likes.length;
+            if (currentUser && likes.includes(currentUser.uid)) {
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+                icon.classList.add('liked');
+            } else {
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+                icon.classList.remove('liked');
+            }
+        });
+    } catch (e) {
+        console.error('Error applying like state:', e);
+    }
 }
 
 function createMonthPostHTML(post, userName, userAvatar, timeAgo) {
@@ -839,11 +870,8 @@ function createMonthPostHTML(post, userName, userAvatar, timeAgo) {
         <div class="card-footer border-0 pt-0">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex gap-3">
-                    <button class="btn btn-link p-0 text-muted">
-                        <i class="bi bi-heart me-1"></i>${post.likes ? post.likes.length : 0}
-                    </button>
-                    <button class="btn btn-link p-0 text-muted">
-                        <i class="bi bi-chat me-1"></i>${post.comments ? post.comments.length : 0}
+                    <button class="btn btn-link p-0 text-muted like-button" data-action="toggle-like" data-post-id="${post.id}">
+                        <i class="bi bi-heart me-1"></i><span class="like-count">${post.likes ? post.likes.length : 0}</span>
                     </button>
                 </div>
             </div>
@@ -914,11 +942,8 @@ function createTransformationPostHTML(post, userName, userAvatar, timeAgo) {
         <div class="card-footer border-0 pt-0">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex gap-3">
-                    <button class="btn btn-link p-0 text-muted">
-                        <i class="bi bi-heart me-1"></i>${post.likes ? post.likes.length : 0}
-                    </button>
-                    <button class="btn btn-link p-0 text-muted">
-                        <i class="bi bi-chat me-1"></i>${post.comments ? post.comments.length : 0}
+                    <button class="btn btn-link p-0 text-muted like-button" data-action="toggle-like" data-post-id="${post.id}">
+                        <i class="bi bi-heart me-1"></i><span class="like-count">${post.likes ? post.likes.length : 0}</span>
                     </button>
                 </div>
             </div>
@@ -946,3 +971,102 @@ function getTimeAgo(timestamp) {
 
 // Make loadFeedPosts globally accessible for retry button
 window.loadFeedPosts = loadFeedPosts;
+
+// In-flight guards to prevent duplicate requests per post
+window._likeInFlight = window._likeInFlight || {};
+
+// Delegated click handler for like buttons
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest && e.target.closest('.like-button');
+    if (!btn) return;
+
+    const action = btn.dataset.action;
+    const postId = btn.dataset.postId;
+    if (action === 'toggle-like' && postId) {
+        await handleToggleLike(postId, btn);
+    }
+});
+
+async function handleToggleLike(postId, buttonElement) {
+    try {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return alert('Please sign in to like posts');
+
+        if (window._likeInFlight[postId]) return; // already working
+        window._likeInFlight[postId] = true;
+
+        const postRef = doc(db, 'posts', postId);
+        const postSnap = await getDoc(postRef);
+        if (!postSnap.exists()) {
+            delete window._likeInFlight[postId];
+            return;
+        }
+
+        const postData = postSnap.data();
+        const likes = postData.likes || [];
+        const hasLiked = likes.includes(currentUser.uid);
+
+        // Optimistic UI update
+    // select heart icon whether it's 'bi-heart' or 'bi-heart-fill'
+    const icon = buttonElement.querySelector('i[class*="bi-heart"]');
+        const countSpan = buttonElement.querySelector('.like-count');
+        const oldCount = parseInt(countSpan?.textContent || '0', 10);
+
+        if (hasLiked) {
+            // Optimistically decrement
+            countSpan.textContent = Math.max(0, oldCount - 1);
+            icon.classList.remove('bi-heart-fill');
+            icon.classList.add('bi-heart');
+            icon.classList.remove('liked');
+        } else {
+            // Optimistically increment and show full red
+            countSpan.textContent = oldCount + 1;
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill');
+            icon.classList.add('liked');
+        }
+
+        // Persist change to Firestore
+        if (hasLiked) {
+            await updateDoc(postRef, {
+                likes: arrayRemove(currentUser.uid)
+            });
+        } else {
+            await updateDoc(postRef, {
+                likes: arrayUnion(currentUser.uid)
+            });
+        }
+
+    } catch (err) {
+        console.error('Error toggling like:', err);
+        // If permission/authorization error, notify the user
+        if (err && err.code && (err.code.includes('permission') || err.message?.toLowerCase().includes('insufficient permissions'))) {
+            try { showToast('error', 'Unable to update like: permission denied. Check Firestore rules.'); } catch (e) { alert('Unable to update like: permission denied. Check Firestore rules.'); }
+        }
+        // Rollback optimistic UI: re-fetch post to get authoritative likes
+        try {
+            const postRef = doc(db, 'posts', postId);
+            const postSnap = await getDoc(postRef);
+            const likes = postSnap.exists() ? (postSnap.data().likes || []) : [];
+            const btns = document.querySelectorAll(`.like-button[data-post-id="${postId}"]`);
+            btns.forEach(b => {
+                const icon = b.querySelector('i[class*="bi-heart"]');
+                const countSpan = b.querySelector('.like-count');
+                countSpan.textContent = likes.length;
+                if (likes.includes(auth.currentUser?.uid)) {
+                    icon.classList.remove('bi-heart');
+                    icon.classList.add('bi-heart-fill');
+                    icon.classList.add('liked');
+                } else {
+                    icon.classList.remove('bi-heart-fill');
+                    icon.classList.add('bi-heart');
+                    icon.classList.remove('liked');
+                }
+            });
+        } catch (e) {
+            console.error('Error during like rollback:', e);
+        }
+    } finally {
+        delete window._likeInFlight[postId];
+    }
+}

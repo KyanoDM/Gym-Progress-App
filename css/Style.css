@@ -399,6 +399,22 @@ span:not(.skeleton) {
     height: 1rem;
 }
 
+/* Feed card spacing */
+#feed-posts .card {
+    margin-bottom: 1rem;
+}
+
+/* Like button styling: remove underline and cursor */
+.like-button {
+    text-decoration: none !important;
+    cursor: pointer;
+}
+
+/* Fully red liked heart */
+.bi-heart.liked, .bi-heart-fill.liked {
+    color: #e0245e !important; /* twitter-like red */
+}
+
 /* Feed post card width: make posts narrower and centered for better readability */
 #feed-posts .card {
     width: 100%;
