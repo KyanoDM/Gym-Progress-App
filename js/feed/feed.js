@@ -655,9 +655,14 @@ async function loadFeedPosts() {
         }
 
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        const followingList = userDoc.exists() ? (userDoc.data().following || []) : [];
+        let followingList = userDoc.exists() ? (userDoc.data().following || []) : [];
 
-        // If user follows nobody, show an empty feed message
+        // Always include the current user's own UID so their posts show up in the feed
+        if (!followingList.includes(currentUser.uid)) {
+            followingList.push(currentUser.uid);
+        }
+
+        // If user follows nobody (and no own posts), show an empty feed message
         if (!followingList || followingList.length === 0) {
             feedContainer.innerHTML = '';
             feedContainer.innerHTML = `

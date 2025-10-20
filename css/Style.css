@@ -399,6 +399,52 @@ span:not(.skeleton) {
     height: 1rem;
 }
 
+/* Feed post card width: make posts narrower and centered for better readability */
+#feed-posts .card {
+    width: 100%;
+    max-width: 760px; /* desktop max width */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (max-width: 992px) {
+    /* Slightly smaller max width on tablets */
+    #feed-posts .card {
+        max-width: 640px;
+    }
+}
+
+@media (max-width: 576px) {
+    /* On small screens allow full width with small horizontal padding */
+    #feed-posts .card {
+        max-width: 100%;
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+    }
+}
+
+/* Make the top create-post card match the feed post width/centering */
+.create-post-card {
+    width: 100%;
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@media (max-width: 992px) {
+    .create-post-card {
+        max-width: 640px;
+    }
+}
+
+@media (max-width: 576px) {
+    .create-post-card {
+        max-width: 100%;
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+    }
+}
+
 /* Toast notification styles */
 .toast-container {
     position: fixed;
