@@ -821,15 +821,15 @@ function createMonthPostHTML(post, userName, userAvatar, timeAgo) {
         post.monthData.month.charAt(0).toUpperCase() + post.monthData.month.slice(1) : 'Unknown';
 
     const avatarHTML = userAvatar ?
-        `<img src="${userAvatar}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">` :
-        `<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">${userName.charAt(0).toUpperCase()}</div>`;
+        `<a href="profile.html?uid=${post.userId}"><img src="${userAvatar}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;"></a>` :
+        `<a href="profile.html?uid=${post.userId}"><div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">${userName.charAt(0).toUpperCase()}</div></a>`;
 
     return `
         <div class="card-header border-0 pb-0">
             <div class="d-flex align-items-center">
                 ${avatarHTML}
                 <div class="flex-grow-1">
-                    <h6 class="mb-0 fw-bold">${userName}</h6>
+                    <h6 class="mb-0 fw-bold"><a href="profile.html?uid=${post.userId}" class="text-reset text-decoration-none">${userName}</a></h6>
                     <small class="text-muted">
                         <i class="bi bi-calendar-check me-1"></i>
                         Shared ${monthName} ${post.monthData.year} • ${timeAgo}
@@ -886,8 +886,8 @@ function createTransformationPostHTML(post, userName, userAvatar, timeAgo) {
         post.afterMonth.month.charAt(0).toUpperCase() + post.afterMonth.month.slice(1) : 'Unknown';
 
     const avatarHTML = userAvatar ?
-        `<img src="${userAvatar}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">` :
-        `<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">${userName.charAt(0).toUpperCase()}</div>`;
+        `<a href="profile.html?uid=${post.userId}"><img src="${userAvatar}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;"></a>` :
+        `<a href="profile.html?uid=${post.userId}"><div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">${userName.charAt(0).toUpperCase()}</div></a>`;
 
     const weightChange = post.beforeMonth.weight && post.afterMonth.weight ?
         (post.afterMonth.weight - post.beforeMonth.weight).toFixed(1) : null;
@@ -897,7 +897,7 @@ function createTransformationPostHTML(post, userName, userAvatar, timeAgo) {
             <div class="d-flex align-items-center">
                 ${avatarHTML}
                 <div class="flex-grow-1">
-                    <h6 class="mb-0 fw-bold">${userName}</h6>
+                    <h6 class="mb-0 fw-bold"><a href="profile.html?uid=${post.userId}" class="text-reset text-decoration-none">${userName}</a></h6>
                     <small class="text-muted">
                         <i class="bi bi-arrow-left-right me-1"></i>
                         Transformation Post • ${timeAgo}
@@ -1007,8 +1007,8 @@ async function handleToggleLike(postId, buttonElement) {
         const hasLiked = likes.includes(currentUser.uid);
 
         // Optimistic UI update
-    // select heart icon whether it's 'bi-heart' or 'bi-heart-fill'
-    const icon = buttonElement.querySelector('i[class*="bi-heart"]');
+        // select heart icon whether it's 'bi-heart' or 'bi-heart-fill'
+        const icon = buttonElement.querySelector('i[class*="bi-heart"]');
         const countSpan = buttonElement.querySelector('.like-count');
         const oldCount = parseInt(countSpan?.textContent || '0', 10);
 

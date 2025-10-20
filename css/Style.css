@@ -411,8 +411,10 @@ span:not(.skeleton) {
 }
 
 /* Fully red liked heart */
-.bi-heart.liked, .bi-heart-fill.liked {
-    color: #e0245e !important; /* twitter-like red */
+.bi-heart.liked,
+.bi-heart-fill.liked {
+    color: #e0245e !important;
+    /* twitter-like red */
 }
 
 /* Feed post card width: make posts narrower and centered for better readability */
@@ -1068,7 +1070,7 @@ body:not(.modal-open) .modal-backdrop {
 /* Responsive adjustments for transformation images */
 @media (max-width: 768px) {
     .transformation-image {
-        max-height: 300px;
+        max-height: 500px;
     }
 
     .transformation-post .col-6 {
@@ -1640,4 +1642,49 @@ body:not(.modal-open) .modal-backdrop {
 
 .logo-container .mb-3 {
     margin-bottom: 1.5rem !important;
+}
+
+/* Profile latest post: make the preview taller and images larger */
+/* make latest post preview taller */
+/* latest post: smaller card but image fills most of it */
+#latest-post-container .card {
+    min-height: 520px;
+    /* compact card height */
+    display: flex;
+    flex-direction: column;
+}
+
+#latest-post-container .card .card-body {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Make the image area grow so the image appears larger within a smaller card */
+#latest-post-container .card .feed-image-wrapper {
+    flex: 3 1 auto;
+    /* grow larger relative to text */
+    display: flex;
+}
+
+/* make the image take up most of the card body */
+#latest-post-container .card .feed-image-wrapper img,
+#latest-post-container .card img {
+    width: 100%;
+    height: 85%;
+    /* image occupies majority of card */
+    max-height: none;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+@media (max-width: 576px) {
+    #latest-post-container .card {
+        min-height: 420px;
+    }
+
+    #latest-post-container .card img {
+        max-height: none;
+    }
 }

@@ -12,6 +12,7 @@ import {
     arrayUnion,
     arrayRemove,
     getDocs,
+    getDocFromCache,
     collection,
     query,
     orderBy,
@@ -41,7 +42,7 @@ async function fillProfile(currentUser) {
 
     let viewedProfileAccount = {};
 
-    const isOwnProfile = !profileUid || profileUid === currentUser.uid;    let name = "Unknown";
+    const isOwnProfile = !profileUid || profileUid === currentUser.uid; let name = "Unknown";
     let username = "unknown";
     let photoURL = "Image/user.png";
     let viewedProfileFollowerCount = 0;
@@ -212,6 +213,130 @@ async function fillProfile(currentUser) {
         followingCountSpan.style.height = "auto";
     }
     if (myFollowingCountDisplay) myFollowingCountDisplay.textContent = currentUserFollowingCount;
+
+    // Fetch and show the latest post for the viewed profile
+    try {
+        const profileUserId = isOwnProfile ? currentUser.uid : profileUid;
+        await fetchAndRenderLatestPost(profileUserId);
+    } catch (e) {
+        console.error('Error fetching latest post for profile:', e);
+    }
+}
+
+async function fetchAndRenderLatestPost(profileUserId) {
+    if (!profileUserId) return;
+    const container = document.getElementById('latest-post-container');
+    if (!container) return;
+
+    try {
+        const postsRef = collection(db, 'posts');
+        const q = query(postsRef, orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+
+        // Find first post that matches the userId
+        let latest = null;
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.userId === profileUserId && !latest) {
+                latest = { id: docSnap.id, ...data };
+            }
+        });
+
+        if (!latest) {
+            container.innerHTML = `
+                <div class="card shadow-sm p-3 text-center">
+                    <div class="text-muted">No posts yet</div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = renderCompactPostHTML(latest);
+    } catch (err) {
+        console.error('Error fetching latest post:', err);
+        container.innerHTML = `<div class="text-center text-muted">Unable to load latest post</div>`;
+    }
+}
+
+function renderCompactPostHTML(post) {
+    const timeAgo = getTimeAgo(post.createdAt);
+    const userName = post.userDisplayName || 'Anonymous';
+    const userAvatar = post.userPhotoURL || null;
+
+    const avatarHTML = userAvatar ?
+        `<img src="${userAvatar}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">` :
+        `<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">${userName.charAt(0).toUpperCase()}</div>`;
+
+    if (post.type === 'month') {
+        return `
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        ${avatarHTML}
+                        <div>
+                            <strong>${userName}</strong>
+                            <div class="text-muted small">Shared ${post.monthData.month} ${post.monthData.year} • ${timeAgo}</div>
+                        </div>
+                    </div>
+                    <div class="feed-image-wrapper mb-2">
+                        <div class="skeleton skeleton-image"></div>
+                        <img src="${post.imageUrl}" class="post-image img-fluid rounded" onload="this.classList.add('loaded'); this.previousElementSibling && this.previousElementSibling.remove();" style="width:100%;">
+                    </div>
+                    ${post.text ? `<p class="mb-1">${post.text}</p>` : ''}
+                    <div class="text-muted small">${post.likes ? post.likes.length : 0} likes</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // transformation
+    return `
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    ${avatarHTML}
+                    <div>
+                        <strong>${userName}</strong>
+                        <div class="text-muted small">Transformation • ${timeAgo}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="feed-image-wrapper mb-2">
+                            <div class="skeleton skeleton-image"></div>
+                            <img src="${post.beforeImage}" class="post-image img-fluid rounded" onload="this.classList.add('loaded'); this.previousElementSibling && this.previousElementSibling.remove();" style="width:100%; object-fit:cover;">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="feed-image-wrapper mb-2">
+                            <div class="skeleton skeleton-image"></div>
+                            <img src="${post.afterImage}" class="post-image img-fluid rounded" onload="this.classList.add('loaded'); this.previousElementSibling && this.previousElementSibling.remove();" style="width:100%; object-fit:cover;">
+                        </div>
+                    </div>
+                </div>
+                ${post.text ? `<p class="mb-1">${post.text}</p>` : ''}
+                <div class="text-muted small">${post.likes ? post.likes.length : 0} likes</div>
+            </div>
+        </div>
+    `;
+}
+
+function getTimeAgo(timestamp) {
+    if (!timestamp) return 'just now';
+
+    const now = new Date();
+    const postTime = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    const diffInMs = now - postTime;
+    const diffInMin = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInMin < 1) return 'just now';
+    if (diffInMin < 60) return `${diffInMin}m ago`;
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+
+    return postTime.toLocaleDateString();
 }
 
 
