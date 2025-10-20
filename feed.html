@@ -19,22 +19,37 @@
                 const htmlElement = document.documentElement;
                 if (theme === 'dark') {
                     htmlElement.setAttribute('data-bs-theme', 'dark');
-                    document.body.classList.add('bg-dark');
+                    if (document.body && document.body.classList) {
+                        document.body.classList.add('bg-dark');
+                    }
                 } else if (theme === 'light') {
                     htmlElement.setAttribute('data-bs-theme', 'light');
-                    document.body.classList.remove('bg-dark');
+                    if (document.body && document.body.classList) {
+                        document.body.classList.remove('bg-dark');
+                    }
                 } else if (theme === 'auto') {
                     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                     if (prefersDark) {
                         htmlElement.setAttribute('data-bs-theme', 'dark');
-                        document.body.classList.add('bg-dark');
+                        if (document.body && document.body.classList) {
+                            document.body.classList.add('bg-dark');
+                        }
                     } else {
                         htmlElement.setAttribute('data-bs-theme', 'light');
-                        document.body.classList.remove('bg-dark');
+                        if (document.body && document.body.classList) {
+                            document.body.classList.remove('bg-dark');
+                        }
                     }
                 }
             }
+
+            // Apply theme immediately for html element
             applyTheme(savedTheme);
+
+            // Apply body theme when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => applyTheme(savedTheme));
+            }
         })();
     </script>
 </head>

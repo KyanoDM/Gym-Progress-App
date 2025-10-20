@@ -31,12 +31,20 @@ let selectedAfterImage = '';
 document.addEventListener("DOMContentLoaded", () => {
     checkOnboarding();
     setupPostCreation();
-    loadFeedPosts(); // Add this to load posts when page loads
 });
 
 function checkOnboarding() {
     onAuthStateChanged(auth, async (user) => {
-        if (!user) return;
+        // If there's no signed-in user, still attempt to load the feed (will show empty state)
+        if (!user) {
+            try {
+                await loadFeedPosts();
+            } catch (e) {
+                console.error('Error loading feed for anonymous user:', e);
+            }
+            return;
+        }
+
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         const onboardingComplete = userSnap.data()?.onboarding?.onboardingComplete;
@@ -50,9 +58,16 @@ function checkOnboarding() {
             }
         }
 
-        // Load user's months for post creation
+        // Load user's months for post creation and avatar
         await loadUserMonths(user.uid);
         loadUserAvatar(user);
+
+        // Now that we have auth and user data, load the feed for the signed-in user
+        try {
+            await loadFeedPosts();
+        } catch (e) {
+            console.error('Error loading feed for signed-in user:', e);
+        }
     });
 }
 
@@ -627,17 +642,50 @@ async function loadFeedPosts() {
     const feedContainer = document.getElementById('feed-posts');
 
     try {
-        // Show loading state
+        // Show loading skeleton
         showFeedLoading(feedContainer);
 
-        // Load posts from Firestore
-        const postsRef = collection(db, "posts");
-        const q = query(postsRef, orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
+        // Get current user and their following list
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            // Not signed in - show empty
+            feedContainer.innerHTML = '';
+            showEmptyFeedMessage(feedContainer);
+            return;
+        }
 
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        const followingList = userDoc.exists() ? (userDoc.data().following || []) : [];
+
+        // If user follows nobody, show an empty feed message
+        if (!followingList || followingList.length === 0) {
+            feedContainer.innerHTML = '';
+            feedContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-people text-muted" style="font-size: 3rem"></i>
+                    <h5 class="mt-3 text-muted">Your feed is empty</h5>
+                    <p class="text-muted">You are not following anyone yet. Follow users to see their posts here.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Firestore 'in' queries are limited to 10 values - batch if needed
         const posts = [];
-        querySnapshot.forEach((doc) => {
-            posts.push({ id: doc.id, ...doc.data() });
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < followingList.length; i += BATCH_SIZE) {
+            const batch = followingList.slice(i, i + BATCH_SIZE);
+            const postsRef = collection(db, 'posts');
+            const postsQuery = query(postsRef, where('userId', 'in', batch), orderBy('createdAt', 'desc'));
+            const snapshot = await getDocs(postsQuery);
+            snapshot.forEach(docSnap => posts.push({ id: docSnap.id, ...docSnap.data() }));
+        }
+
+        // Sort combined posts by createdAt descending
+        posts.sort((a, b) => {
+            const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+            const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+            return bTime - aTime;
         });
 
         // Clear loading and display posts
@@ -659,12 +707,36 @@ async function loadFeedPosts() {
 }
 
 function showFeedLoading(container) {
+    // Skeleton loading cards similar to other pages
     container.innerHTML = `
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+        <div class="d-flex flex-column gap-3 py-3" id="feed-loading-skeleton">
+            <div class="card shadow-sm p-3">
+                <div class="d-flex gap-3">
+                    <div class="skeleton skeleton-circle skeleton-avatar-sm"></div>
+                    <div class="flex-grow-1">
+                        <div class="skeleton skeleton-text mb-2" style="width:40%"></div>
+                        <div class="skeleton" style="height:180px; margin-top:8px"></div>
+                    </div>
+                </div>
             </div>
-            <h5 class="mt-3 text-muted">Loading posts...</h5>
+            <div class="card shadow-sm p-3">
+                <div class="d-flex gap-3">
+                    <div class="skeleton skeleton-circle skeleton-avatar-sm"></div>
+                    <div class="flex-grow-1">
+                        <div class="skeleton skeleton-text mb-2" style="width:30%"></div>
+                        <div class="skeleton" style="height:140px; margin-top:8px"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm p-3">
+                <div class="d-flex gap-3">
+                    <div class="skeleton skeleton-circle skeleton-avatar-sm"></div>
+                    <div class="flex-grow-1">
+                        <div class="skeleton skeleton-text mb-2" style="width:50%"></div>
+                        <div class="skeleton" style="height:160px; margin-top:8px"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 }
