@@ -809,8 +809,10 @@ function createMonthPostHTML(post, userName, userAvatar, timeAgo) {
         <div class="card-body pt-3">
             ${post.text ? `<p class="mb-3">${post.text}</p>` : ''}
             <div class="position-relative">
-                <img src="${post.imageUrl}" class="img-fluid rounded month-post-image">
-
+                <div class="feed-image-wrapper">
+                    <div class="skeleton skeleton-image"></div>
+                    <img src="${post.imageUrl}" class="post-image img-fluid rounded month-post-image" onload="this.classList.add('loaded'); this.previousElementSibling && this.previousElementSibling.remove();">
+                </div>
             </div>
             <div class="row mt-3 text-center">
                 ${post.monthData.weight ? `
@@ -881,7 +883,10 @@ function createTransformationPostHTML(post, userName, userAvatar, timeAgo) {
             <div class="col-6">
                 <div class="text-center">
                     <h6 class="mb-2 text-muted">BEFORE</h6>
-                    <img src="${post.beforeImage}" class="img-fluid transformation-image">
+                    <div class="feed-image-wrapper">
+                        <div class="skeleton skeleton-image"></div>
+                        <img src="${post.beforeImage}" class="post-image img-fluid transformation-image" onload="this.classList.add('loaded'); this.previousElementSibling && this.previousElementSibling.remove();">
+                    </div>
                     <p class="mb-1 mt-2"><strong>${post.beforeMonth?.weight ? post.beforeMonth.weight + ' kg' : '--'}</strong></p>
                     <small class="text-muted">${beforeMonthName} ${post.beforeMonth?.year || ''}</small>
                 </div>
@@ -889,7 +894,10 @@ function createTransformationPostHTML(post, userName, userAvatar, timeAgo) {
             <div class="col-6">
                 <div class="text-center">
                     <h6 class="mb-2 text-muted">AFTER</h6>
-                    <img src="${post.afterImage}" class="img-fluid transformation-image">
+                    <div class="feed-image-wrapper">
+                        <div class="skeleton skeleton-image"></div>
+                        <img src="${post.afterImage}" class="post-image img-fluid transformation-image" onload="this.classList.add('loaded'); this.previousElementSibling && this.previousElementSibling.remove();">
+                    </div>
                     <p class="mb-1 mt-2"><strong>${post.afterMonth?.weight ? post.afterMonth.weight + ' kg' : '--'}</strong></p>
                     <small class="text-muted">${afterMonthName} ${post.afterMonth?.year || ''}</small>
                 </div>

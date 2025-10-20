@@ -448,6 +448,30 @@ span:not(.skeleton) {
     }
 }
 
+/* Image loading skeleton used in feed posts */
+.feed-image-wrapper {
+    position: relative;
+    display: block;
+}
+
+.feed-image-wrapper .skeleton-image {
+    width: 100%;
+    min-height: 140px;
+    border-radius: 8px;
+}
+
+.feed-image-wrapper img.post-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    opacity: 0;
+    transition: opacity 240ms ease-in;
+}
+
+.feed-image-wrapper img.post-image.loaded {
+    opacity: 1;
+}
+
 /* Toast notification styles */
 .toast-container {
     position: fixed;
