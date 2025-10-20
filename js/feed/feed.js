@@ -882,14 +882,16 @@ function createTransformationPostHTML(post, userName, userAvatar, timeAgo) {
                 <div class="text-center">
                     <h6 class="mb-2 text-muted">BEFORE</h6>
                     <img src="${post.beforeImage}" class="img-fluid transformation-image">
-                    ...
+                    <p class="mb-1 mt-2"><strong>${post.beforeMonth?.weight ? post.beforeMonth.weight + ' kg' : '--'}</strong></p>
+                    <small class="text-muted">${beforeMonthName} ${post.beforeMonth?.year || ''}</small>
                 </div>
             </div>
             <div class="col-6">
                 <div class="text-center">
                     <h6 class="mb-2 text-muted">AFTER</h6>
                     <img src="${post.afterImage}" class="img-fluid transformation-image">
-                    ...
+                    <p class="mb-1 mt-2"><strong>${post.afterMonth?.weight ? post.afterMonth.weight + ' kg' : '--'}</strong></p>
+                    <small class="text-muted">${afterMonthName} ${post.afterMonth?.year || ''}</small>
                 </div>
             </div>
         </div>

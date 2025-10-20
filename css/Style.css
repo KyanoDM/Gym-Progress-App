@@ -402,12 +402,14 @@ span:not(.skeleton) {
 /* Feed post card width: make posts narrower and centered for better readability */
 #feed-posts .card {
     width: 100%;
-    max-width: 760px; /* desktop max width */
+    max-width: 760px;
+    /* desktop max width */
     margin-left: auto;
     margin-right: auto;
 }
 
 @media (max-width: 992px) {
+
     /* Slightly smaller max width on tablets */
     #feed-posts .card {
         max-width: 640px;
@@ -415,6 +417,7 @@ span:not(.skeleton) {
 }
 
 @media (max-width: 576px) {
+
     /* On small screens allow full width with small horizontal padding */
     #feed-posts .card {
         max-width: 100%;
@@ -1355,15 +1358,18 @@ body:not(.modal-open) .modal-backdrop {
 }
 
 /* Login and Signup Page Styles */
-.login-page, .signup-page {
+.login-page,
+.signup-page {
     height: 100vh;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow: auto;
 }
 
-.login-container, .signup-container {
+.login-container,
+.signup-container {
     width: 100%;
-    max-width: 500px; /* Increased from 400px */
+    max-width: 500px;
+    /* Increased from 400px */
 }
 
 .brand-logo {
@@ -1373,47 +1379,59 @@ body:not(.modal-open) .modal-backdrop {
 }
 
 .logo-img {
-    width: 90%; /* Larger logo */
+    width: 90%;
+    /* Larger logo */
 
 }
 
 .brand-title {
-    font-size: 2.5rem; /* Increased from 2rem */
+    font-size: 2.5rem;
+    /* Increased from 2rem */
     font-weight: 700;
     color: #0d6efd;
     margin-bottom: 0.5rem;
 }
 
-.login-form-wrapper, .signup-form-wrapper {
+.login-form-wrapper,
+.signup-form-wrapper {
     background: white;
-    padding: 3rem; /* Increased from 2rem */
-    border-radius: 16px; /* Increased from 12px */
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+    padding: 3rem;
+    /* Increased from 2rem */
+    border-radius: 16px;
+    /* Increased from 12px */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    /* Stronger shadow */
     border: 1px solid #e9ecef;
     width: 100%;
 }
 
-.login-form-wrapper h2, .signup-form-wrapper h2 {
-    font-size: 1.75rem; /* Larger heading */
+.login-form-wrapper h2,
+.signup-form-wrapper h2 {
+    font-size: 1.75rem;
+    /* Larger heading */
     font-weight: 600;
     margin-bottom: 2rem;
 }
 
 .form-control-lg {
-    padding: 1rem 1.25rem; /* Larger padding */
-    font-size: 1.1rem; /* Larger text */
+    padding: 1rem 1.25rem;
+    /* Larger padding */
+    font-size: 1.1rem;
+    /* Larger text */
     border-radius: 10px;
 }
 
 .form-label {
-    font-size: 1rem; /* Larger labels */
+    font-size: 1rem;
+    /* Larger labels */
     font-weight: 500;
     color: #495057;
     margin-bottom: 0.75rem;
 }
 
 .btn-lg {
-    padding: 1rem 1.5rem; /* Larger buttons */
+    padding: 1rem 1.5rem;
+    /* Larger buttons */
     font-size: 1.1rem;
     border-radius: 10px;
 }
@@ -1421,16 +1439,19 @@ body:not(.modal-open) .modal-backdrop {
 .divider {
     position: relative;
     text-align: center;
-    margin: 2rem 0; /* More spacing */
+    margin: 2rem 0;
+    /* More spacing */
 }
 
 /* Removed the divider line - no ::before pseudo-element */
 
 .divider-text {
     /* Removed background since there's no line */
-    padding: 0; /* No padding needed */
+    padding: 0;
+    /* No padding needed */
     color: #6c757d;
-    font-size: 1rem; /* Larger text */
+    font-size: 1rem;
+    /* Larger text */
 }
 
 .form-control:focus {
@@ -1462,27 +1483,31 @@ body:not(.modal-open) .modal-backdrop {
 }
 
 .preview-container {
-    width: 90%; /* Increased from 500px */
+    width: 90%;
+    /* Increased from 500px */
 }
 
 .preview-image {
-    
+
     border-radius: 16px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
 .preview-container h3 {
-    font-size: 1.75rem; /* Larger heading */
+    font-size: 1.75rem;
+    /* Larger heading */
     font-weight: 600;
 }
 
 .preview-container .lead {
-    font-size: 1.2rem; /* Larger text */
+    font-size: 1.2rem;
+    /* Larger text */
 }
 
 .stat-item h4 {
     font-weight: 700;
-    font-size: 2rem; /* Larger stats */
+    font-size: 2rem;
+    /* Larger stats */
 }
 
 .stat-item small {
@@ -1500,35 +1525,41 @@ body:not(.modal-open) .modal-backdrop {
 
 /* Responsive adjustments */
 @media (max-width: 991.98px) {
-    .login-container, .signup-container {
-        max-width: 600px; /* Larger on tablets */
+
+    .login-container,
+    .signup-container {
+        max-width: 600px;
+        /* Larger on tablets */
     }
-    
-    .login-form-wrapper, .signup-form-wrapper {
+
+    .login-form-wrapper,
+    .signup-form-wrapper {
         margin: 1.5rem;
         padding: 2.5rem;
     }
-    
+
     .brand-title {
         font-size: 2.25rem;
     }
 }
 
 @media (max-width: 575.98px) {
-    .login-form-wrapper, .signup-form-wrapper {
+
+    .login-form-wrapper,
+    .signup-form-wrapper {
         padding: 2rem;
         margin: 1rem;
     }
-    
+
     .brand-title {
         font-size: 2rem;
     }
-    
+
     .logo-img {
         width: 60px;
         height: 60px;
     }
-    
+
     .form-control-lg {
         padding: 0.875rem 1rem;
         font-size: 1rem;
