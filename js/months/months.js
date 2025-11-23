@@ -593,6 +593,20 @@ async function syncMonthsCount(userId, actualCount) {
     }
 }
 
+// Database functions for total visits counter
+async function updateTotalVisits(userId, visitsDelta) {
+    try {
+        if (visitsDelta === 0 || visitsDelta === null || isNaN(visitsDelta)) return;
+
+        const userDocRef = doc(db, 'users', userId);
+        await updateDoc(userDocRef, {
+            'account.totalVisits': increment(visitsDelta)
+        });
+    } catch (error) {
+        // Silent error handling
+    }
+}
+
 function createAddMonthCard() {
     const addMonthCol = document.createElement('div');
     addMonthCol.className = 'months-col';
@@ -1118,7 +1132,7 @@ function loadActualImages(month, container) {
             // Remove skeleton and show image
             skeletonDiv.remove();
             img.style.display = 'block';
-        };        img.onerror = () => {
+        }; img.onerror = () => {
             img.src = 'Image/user.png';
             // The onload will still fire with the fallback image
         };
@@ -1433,6 +1447,10 @@ async function handleDeleteMonth(monthId, monthName, year) {
 
         // Decrement months counter in user account
         await decrementMonthsCount(user.uid);
+
+        // Decrease total visits by the deleted month's gym visits
+        const gymVisits = monthData.gymVisits || 0;
+        await updateTotalVisits(user.uid, -gymVisits);
 
         // Reload the months to reflect the change
         await loadUserMonths(user.uid);
@@ -2015,6 +2033,10 @@ async function handleAddMonth() {
     // Increment months counter in user account
     await incrementMonthsCount(userId);
 
+    // Update total visits if gymVisits is provided
+    const gymVisits = gymVisitsInput.value ? parseInt(gymVisitsInput.value) : 0;
+    await updateTotalVisits(userId, gymVisits);
+
     updateProgress(100, `<div class="progress-step"><i class="bi bi-check-circle me-1"></i>Month added successfully!</div>`);
 }
 
@@ -2207,6 +2229,12 @@ async function handleEditMonth() {
     // Update in Firestore
     const monthDocRef = doc(db, "users", userId, "months", window.editingMonthId);
     await updateDoc(monthDocRef, updatedMonthData);
+
+    // Update total visits based on the difference
+    const oldGymVisits = currentMonthData.gymVisits || 0;
+    const newGymVisits = gymVisitsInput.value ? parseInt(gymVisitsInput.value) : 0;
+    const visitsDelta = newGymVisits - oldGymVisits;
+    await updateTotalVisits(userId, visitsDelta);
 
     updateProgress(100, `<div class="progress-step"><i class="bi bi-check-circle me-1"></i>Month updated successfully!</div>`);
 
