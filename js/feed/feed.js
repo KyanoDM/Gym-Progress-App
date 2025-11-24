@@ -13,7 +13,10 @@ import {
     getDocs,
     addDoc,
     serverTimestamp,
-    where
+    where,
+    updateDoc,
+    arrayUnion,
+    arrayRemove
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
 const db = getFirestore(app);
@@ -31,12 +34,20 @@ let selectedAfterImage = '';
 document.addEventListener("DOMContentLoaded", () => {
     checkOnboarding();
     setupPostCreation();
-    loadFeedPosts(); // Add this to load posts when page loads
 });
 
 function checkOnboarding() {
     onAuthStateChanged(auth, async (user) => {
-        if (!user) return;
+        // If there's no signed-in user, still attempt to load the feed (will show empty state)
+        if (!user) {
+            try {
+                await loadFeedPosts();
+            } catch (e) {
+                console.error('Error loading feed for anonymous user:', e);
+            }
+            return;
+        }
+
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         const onboardingComplete = userSnap.data()?.onboarding?.onboardingComplete;
@@ -50,9 +61,16 @@ function checkOnboarding() {
             }
         }
 
-        // Load user's months for post creation
+        // Load user's months for post creation and avatar
         await loadUserMonths(user.uid);
         loadUserAvatar(user);
+
+        // Now that we have auth and user data, load the feed for the signed-in user
+        try {
+            await loadFeedPosts();
+        } catch (e) {
+            console.error('Error loading feed for signed-in user:', e);
+        }
     });
 }
 
@@ -627,17 +645,55 @@ async function loadFeedPosts() {
     const feedContainer = document.getElementById('feed-posts');
 
     try {
-        // Show loading state
+        // Show loading skeleton
         showFeedLoading(feedContainer);
 
-        // Load posts from Firestore
-        const postsRef = collection(db, "posts");
-        const q = query(postsRef, orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
+        // Get current user and their following list
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+            // Not signed in - show empty
+            feedContainer.innerHTML = '';
+            showEmptyFeedMessage(feedContainer);
+            return;
+        }
 
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        let followingList = userDoc.exists() ? (userDoc.data().following || []) : [];
+
+        // Always include the current user's own UID so their posts show up in the feed
+        if (!followingList.includes(currentUser.uid)) {
+            followingList.push(currentUser.uid);
+        }
+
+        // If user follows nobody (and no own posts), show an empty feed message
+        if (!followingList || followingList.length === 0) {
+            feedContainer.innerHTML = '';
+            feedContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-people text-muted" style="font-size: 3rem"></i>
+                    <h5 class="mt-3 text-muted">Your feed is empty</h5>
+                    <p class="text-muted">You are not following anyone yet. Follow users to see their posts here.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Firestore 'in' queries are limited to 10 values - batch if needed
         const posts = [];
-        querySnapshot.forEach((doc) => {
-            posts.push({ id: doc.id, ...doc.data() });
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < followingList.length; i += BATCH_SIZE) {
+            const batch = followingList.slice(i, i + BATCH_SIZE);
+            const postsRef = collection(db, 'posts');
+            const postsQuery = query(postsRef, where('userId', 'in', batch), orderBy('createdAt', 'desc'));
+            const snapshot = await getDocs(postsQuery);
+            snapshot.forEach(docSnap => posts.push({ id: docSnap.id, ...docSnap.data() }));
+        }
+
+        // Sort combined posts by createdAt descending
+        posts.sort((a, b) => {
+            const aTime = a.createdAt?.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+            const bTime = b.createdAt?.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
+            return bTime - aTime;
         });
 
         // Clear loading and display posts
@@ -659,12 +715,36 @@ async function loadFeedPosts() {
 }
 
 function showFeedLoading(container) {
+    // Skeleton loading cards similar to other pages
     container.innerHTML = `
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+        <div class="d-flex flex-column gap-3 py-3" id="feed-loading-skeleton">
+            <div class="card shadow-sm p-3">
+                <div class="d-flex gap-3">
+                    <div class="skeleton skeleton-circle skeleton-avatar-sm"></div>
+                    <div class="flex-grow-1">
+                        <div class="skeleton skeleton-text mb-2" style="width:40%"></div>
+                        <div class="skeleton" style="height:180px; margin-top:8px"></div>
+                    </div>
+                </div>
             </div>
-            <h5 class="mt-3 text-muted">Loading posts...</h5>
+            <div class="card shadow-sm p-3">
+                <div class="d-flex gap-3">
+                    <div class="skeleton skeleton-circle skeleton-avatar-sm"></div>
+                    <div class="flex-grow-1">
+                        <div class="skeleton skeleton-text mb-2" style="width:30%"></div>
+                        <div class="skeleton" style="height:140px; margin-top:8px"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card shadow-sm p-3">
+                <div class="d-flex gap-3">
+                    <div class="skeleton skeleton-circle skeleton-avatar-sm"></div>
+                    <div class="flex-grow-1">
+                        <div class="skeleton skeleton-text mb-2" style="width:50%"></div>
+                        <div class="skeleton" style="height:160px; margin-top:8px"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 }
@@ -705,7 +785,35 @@ function createPostElement(post) {
         postDiv.innerHTML = createTransformationPostHTML(post, userName, userAvatar, timeAgo);
     }
 
+    // Apply like state for the current user (fill heart if liked)
+    applyLikeState(post, postDiv);
+
     return postDiv;
+}
+
+function applyLikeState(post, postElement) {
+    try {
+        const currentUser = auth.currentUser;
+        const postId = post.id;
+        const likes = post.likes || [];
+        const btns = postElement.querySelectorAll(`.like-button[data-post-id="${postId}"]`);
+        btns.forEach(b => {
+            const icon = b.querySelector('i.bi-heart');
+            const countSpan = b.querySelector('.like-count');
+            countSpan.textContent = likes.length;
+            if (currentUser && likes.includes(currentUser.uid)) {
+                icon.classList.remove('bi-heart');
+                icon.classList.add('bi-heart-fill');
+                icon.classList.add('liked');
+            } else {
+                icon.classList.remove('bi-heart-fill');
+                icon.classList.add('bi-heart');
+                icon.classList.remove('liked');
+            }
+        });
+    } catch (e) {
+        console.error('Error applying like state:', e);
+    }
 }
 
 function createMonthPostHTML(post, userName, userAvatar, timeAgo) {
@@ -713,15 +821,15 @@ function createMonthPostHTML(post, userName, userAvatar, timeAgo) {
         post.monthData.month.charAt(0).toUpperCase() + post.monthData.month.slice(1) : 'Unknown';
 
     const avatarHTML = userAvatar ?
-        `<img src="${userAvatar}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">` :
-        `<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">${userName.charAt(0).toUpperCase()}</div>`;
+        `<a href="profile.html?uid=${post.userId}"><img src="${userAvatar}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;"></a>` :
+        `<a href="profile.html?uid=${post.userId}"><div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">${userName.charAt(0).toUpperCase()}</div></a>`;
 
     return `
         <div class="card-header border-0 pb-0">
             <div class="d-flex align-items-center">
                 ${avatarHTML}
                 <div class="flex-grow-1">
-                    <h6 class="mb-0 fw-bold">${userName}</h6>
+                    <h6 class="mb-0 fw-bold"><a href="profile.html?uid=${post.userId}" class="text-reset text-decoration-none">${userName}</a></h6>
                     <small class="text-muted">
                         <i class="bi bi-calendar-check me-1"></i>
                         Shared ${monthName} ${post.monthData.year} • ${timeAgo}
@@ -732,8 +840,10 @@ function createMonthPostHTML(post, userName, userAvatar, timeAgo) {
         <div class="card-body pt-3">
             ${post.text ? `<p class="mb-3">${post.text}</p>` : ''}
             <div class="position-relative">
-                <img src="${post.imageUrl}" class="img-fluid rounded month-post-image">
-
+                <div class="feed-image-wrapper">
+                    <div class="skeleton skeleton-image"></div>
+                    <img src="${post.imageUrl}" class="post-image img-fluid rounded month-post-image" onload="this.classList.add('loaded'); this.previousElementSibling && this.previousElementSibling.remove();">
+                </div>
             </div>
             <div class="row mt-3 text-center">
                 ${post.monthData.weight ? `
@@ -760,11 +870,8 @@ function createMonthPostHTML(post, userName, userAvatar, timeAgo) {
         <div class="card-footer border-0 pt-0">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex gap-3">
-                    <button class="btn btn-link p-0 text-muted">
-                        <i class="bi bi-heart me-1"></i>${post.likes ? post.likes.length : 0}
-                    </button>
-                    <button class="btn btn-link p-0 text-muted">
-                        <i class="bi bi-chat me-1"></i>${post.comments ? post.comments.length : 0}
+                    <button class="btn btn-link p-0 text-muted like-button" data-action="toggle-like" data-post-id="${post.id}">
+                        <i class="bi bi-heart me-1"></i><span class="like-count">${post.likes ? post.likes.length : 0}</span>
                     </button>
                 </div>
             </div>
@@ -779,8 +886,8 @@ function createTransformationPostHTML(post, userName, userAvatar, timeAgo) {
         post.afterMonth.month.charAt(0).toUpperCase() + post.afterMonth.month.slice(1) : 'Unknown';
 
     const avatarHTML = userAvatar ?
-        `<img src="${userAvatar}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">` :
-        `<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">${userName.charAt(0).toUpperCase()}</div>`;
+        `<a href="profile.html?uid=${post.userId}"><img src="${userAvatar}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;"></a>` :
+        `<a href="profile.html?uid=${post.userId}"><div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; font-weight: bold;">${userName.charAt(0).toUpperCase()}</div></a>`;
 
     const weightChange = post.beforeMonth.weight && post.afterMonth.weight ?
         (post.afterMonth.weight - post.beforeMonth.weight).toFixed(1) : null;
@@ -790,7 +897,7 @@ function createTransformationPostHTML(post, userName, userAvatar, timeAgo) {
             <div class="d-flex align-items-center">
                 ${avatarHTML}
                 <div class="flex-grow-1">
-                    <h6 class="mb-0 fw-bold">${userName}</h6>
+                    <h6 class="mb-0 fw-bold"><a href="profile.html?uid=${post.userId}" class="text-reset text-decoration-none">${userName}</a></h6>
                     <small class="text-muted">
                         <i class="bi bi-arrow-left-right me-1"></i>
                         Transformation Post • ${timeAgo}
@@ -804,15 +911,23 @@ function createTransformationPostHTML(post, userName, userAvatar, timeAgo) {
             <div class="col-6">
                 <div class="text-center">
                     <h6 class="mb-2 text-muted">BEFORE</h6>
-                    <img src="${post.beforeImage}" class="img-fluid transformation-image">
-                    ...
+                    <div class="feed-image-wrapper">
+                        <div class="skeleton skeleton-image"></div>
+                        <img src="${post.beforeImage}" class="post-image img-fluid transformation-image" onload="this.classList.add('loaded'); this.previousElementSibling && this.previousElementSibling.remove();">
+                    </div>
+                    <p class="mb-1 mt-2"><strong>${post.beforeMonth?.weight ? post.beforeMonth.weight + ' kg' : '--'}</strong></p>
+                    <small class="text-muted">${beforeMonthName} ${post.beforeMonth?.year || ''}</small>
                 </div>
             </div>
             <div class="col-6">
                 <div class="text-center">
                     <h6 class="mb-2 text-muted">AFTER</h6>
-                    <img src="${post.afterImage}" class="img-fluid transformation-image">
-                    ...
+                    <div class="feed-image-wrapper">
+                        <div class="skeleton skeleton-image"></div>
+                        <img src="${post.afterImage}" class="post-image img-fluid transformation-image" onload="this.classList.add('loaded'); this.previousElementSibling && this.previousElementSibling.remove();">
+                    </div>
+                    <p class="mb-1 mt-2"><strong>${post.afterMonth?.weight ? post.afterMonth.weight + ' kg' : '--'}</strong></p>
+                    <small class="text-muted">${afterMonthName} ${post.afterMonth?.year || ''}</small>
                 </div>
             </div>
         </div>
@@ -827,11 +942,8 @@ function createTransformationPostHTML(post, userName, userAvatar, timeAgo) {
         <div class="card-footer border-0 pt-0">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex gap-3">
-                    <button class="btn btn-link p-0 text-muted">
-                        <i class="bi bi-heart me-1"></i>${post.likes ? post.likes.length : 0}
-                    </button>
-                    <button class="btn btn-link p-0 text-muted">
-                        <i class="bi bi-chat me-1"></i>${post.comments ? post.comments.length : 0}
+                    <button class="btn btn-link p-0 text-muted like-button" data-action="toggle-like" data-post-id="${post.id}">
+                        <i class="bi bi-heart me-1"></i><span class="like-count">${post.likes ? post.likes.length : 0}</span>
                     </button>
                 </div>
             </div>
@@ -859,3 +971,102 @@ function getTimeAgo(timestamp) {
 
 // Make loadFeedPosts globally accessible for retry button
 window.loadFeedPosts = loadFeedPosts;
+
+// In-flight guards to prevent duplicate requests per post
+window._likeInFlight = window._likeInFlight || {};
+
+// Delegated click handler for like buttons
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest && e.target.closest('.like-button');
+    if (!btn) return;
+
+    const action = btn.dataset.action;
+    const postId = btn.dataset.postId;
+    if (action === 'toggle-like' && postId) {
+        await handleToggleLike(postId, btn);
+    }
+});
+
+async function handleToggleLike(postId, buttonElement) {
+    try {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return alert('Please sign in to like posts');
+
+        if (window._likeInFlight[postId]) return; // already working
+        window._likeInFlight[postId] = true;
+
+        const postRef = doc(db, 'posts', postId);
+        const postSnap = await getDoc(postRef);
+        if (!postSnap.exists()) {
+            delete window._likeInFlight[postId];
+            return;
+        }
+
+        const postData = postSnap.data();
+        const likes = postData.likes || [];
+        const hasLiked = likes.includes(currentUser.uid);
+
+        // Optimistic UI update
+        // select heart icon whether it's 'bi-heart' or 'bi-heart-fill'
+        const icon = buttonElement.querySelector('i[class*="bi-heart"]');
+        const countSpan = buttonElement.querySelector('.like-count');
+        const oldCount = parseInt(countSpan?.textContent || '0', 10);
+
+        if (hasLiked) {
+            // Optimistically decrement
+            countSpan.textContent = Math.max(0, oldCount - 1);
+            icon.classList.remove('bi-heart-fill');
+            icon.classList.add('bi-heart');
+            icon.classList.remove('liked');
+        } else {
+            // Optimistically increment and show full red
+            countSpan.textContent = oldCount + 1;
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill');
+            icon.classList.add('liked');
+        }
+
+        // Persist change to Firestore
+        if (hasLiked) {
+            await updateDoc(postRef, {
+                likes: arrayRemove(currentUser.uid)
+            });
+        } else {
+            await updateDoc(postRef, {
+                likes: arrayUnion(currentUser.uid)
+            });
+        }
+
+    } catch (err) {
+        console.error('Error toggling like:', err);
+        // If permission/authorization error, notify the user
+        if (err && err.code && (err.code.includes('permission') || err.message?.toLowerCase().includes('insufficient permissions'))) {
+            try { showToast('error', 'Unable to update like: permission denied. Check Firestore rules.'); } catch (e) { alert('Unable to update like: permission denied. Check Firestore rules.'); }
+        }
+        // Rollback optimistic UI: re-fetch post to get authoritative likes
+        try {
+            const postRef = doc(db, 'posts', postId);
+            const postSnap = await getDoc(postRef);
+            const likes = postSnap.exists() ? (postSnap.data().likes || []) : [];
+            const btns = document.querySelectorAll(`.like-button[data-post-id="${postId}"]`);
+            btns.forEach(b => {
+                const icon = b.querySelector('i[class*="bi-heart"]');
+                const countSpan = b.querySelector('.like-count');
+                countSpan.textContent = likes.length;
+                if (likes.includes(auth.currentUser?.uid)) {
+                    icon.classList.remove('bi-heart');
+                    icon.classList.add('bi-heart-fill');
+                    icon.classList.add('liked');
+                } else {
+                    icon.classList.remove('bi-heart-fill');
+                    icon.classList.add('bi-heart');
+                    icon.classList.remove('liked');
+                }
+            });
+        } catch (e) {
+            console.error('Error during like rollback:', e);
+        }
+    } finally {
+        delete window._likeInFlight[postId];
+    }
+}

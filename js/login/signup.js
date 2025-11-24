@@ -50,7 +50,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 isOwner,
                                 isVerified: false,
                                 isAdmin: false,
-                                isOwner: false
+                                isOwner: false,
+                                totalVisits: 0
                             },
                             preferences: {
                                 weightUnit: "kg",
@@ -115,7 +116,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     username: "Guest",
                     isVerified: false,
                     isAdmin: false,
-                    isOwner: false
+                    isOwner: false,
+                    totalVisits: 0
                 },
                 preferences: {
                     weightUnit: "kg",

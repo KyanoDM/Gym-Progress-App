@@ -20,22 +20,28 @@
                 const htmlElement = document.documentElement;
                 if (theme === 'dark') {
                     htmlElement.setAttribute('data-bs-theme', 'dark');
-                    document.body.classList.add('bg-dark');
+                    if (document.body) document.body.classList.add('bg-dark');
                 } else if (theme === 'light') {
                     htmlElement.setAttribute('data-bs-theme', 'light');
-                    document.body.classList.remove('bg-dark');
+                    if (document.body) document.body.classList.remove('bg-dark');
                 } else if (theme === 'auto') {
                     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                     if (prefersDark) {
                         htmlElement.setAttribute('data-bs-theme', 'dark');
-                        document.body.classList.add('bg-dark');
+                        if (document.body) document.body.classList.add('bg-dark');
                     } else {
                         htmlElement.setAttribute('data-bs-theme', 'light');
-                        document.body.classList.remove('bg-dark');
+                        if (document.body) document.body.classList.remove('bg-dark');
                     }
                 }
             }
-            applyTheme(savedTheme);
+
+            // If document.body isn't ready yet (script in head), wait for DOMContentLoaded
+            if (document.body) {
+                applyTheme(savedTheme);
+            } else {
+                document.addEventListener('DOMContentLoaded', () => applyTheme(savedTheme));
+            }
         })();
     </script>
 </head>
@@ -44,7 +50,8 @@
     <div class="d-flex" style="height: 100vh;" id="side-nav">
         <!-- Sidebar -->
         <nav class="bg-light border-end d-flex flex-column justify-content-between"
-            style="width: 260px; min-width: 220px;">            <div>
+            style="width: 260px; min-width: 220px;">
+            <div>
                 <div class="logo-container">
                     <div class="mb-3 text-center">
                         <img src="Image/Logo_Big.png" alt="ProgressPal Logo" class="navbar-logo" data-light-logo="Image/Logo_Big.png" data-dark-logo="Image/Logo_Big_DarkMode.png">
@@ -167,6 +174,11 @@
                     </div>
                 </div>
                 <button class="btn btn-sm btn-primary ms-3">Complete</button>
+            </div>
+
+            <!-- Latest post preview -->
+            <div id="latest-post-container" class="mx-auto mt-4" style="max-width:700px;">
+                <!-- latest post will be injected here -->
             </div>
         </div>
 
