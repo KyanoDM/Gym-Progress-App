@@ -473,20 +473,36 @@ function applyTheme(theme) {
     if (theme === 'dark') {
         htmlElement.setAttribute('data-bs-theme', 'dark');
         document.body.classList.add('bg-dark');
+        updateLogos('dark');
     } else if (theme === 'light') {
         htmlElement.setAttribute('data-bs-theme', 'light');
         document.body.classList.remove('bg-dark');
+        updateLogos('light');
     } else if (theme === 'auto') {
         // Follow system preference
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (prefersDark) {
             htmlElement.setAttribute('data-bs-theme', 'dark');
             document.body.classList.add('bg-dark');
+            updateLogos('dark');
         } else {
             htmlElement.setAttribute('data-bs-theme', 'light');
             document.body.classList.remove('bg-dark');
+            updateLogos('light');
         }
     }
+}
+
+function updateLogos(theme) {
+    // Update all logos with data attributes
+    const logos = document.querySelectorAll('[data-light-logo][data-dark-logo]');
+    logos.forEach(logo => {
+        if (theme === 'dark') {
+            logo.src = logo.dataset.darkLogo;
+        } else {
+            logo.src = logo.dataset.lightLogo;
+        }
+    });
 }
 
 function setupExportButtons() {

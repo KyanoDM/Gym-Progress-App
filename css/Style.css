@@ -1497,6 +1497,7 @@ body:not(.modal-open) .modal-backdrop {
     border-radius: 12px;
     margin: 0 auto;
     display: block;
+    transition: opacity 0.3s ease;
 }
 
 .navbar-logo-small {
@@ -1506,6 +1507,89 @@ body:not(.modal-open) .modal-backdrop {
     border-radius: 8px;
     margin: 0 auto;
     display: block;
+    transition: opacity 0.3s ease;
+}
+
+/* Dark mode logo support */
+[data-bs-theme="dark"] .navbar-logo,
+[data-bs-theme="dark"] .navbar-logo-small {
+    content: url('../Image/Logo_Big_DarkMode.png');
+}
+
+.logo-img {
+    transition: opacity 0.3s ease;
+}
+
+[data-bs-theme="dark"] .logo-img {
+    content: url('../Image/Logo_Big_DarkMode.png');
+}
+
+/* Dark Mode Navigation Styles */
+[data-bs-theme="dark"] .bg-light {
+    background-color: #212529 !important;
+    border-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .border-end {
+    border-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .border-bottom {
+    border-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .text-muted {
+    color: #adb5bd !important;
+}
+
+[data-bs-theme="dark"] .text-dark {
+    color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .nav-link {
+    color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .nav-link:hover {
+    color: #adb5bd !important;
+}
+
+[data-bs-theme="dark"] .nav-link.active {
+    color: #0d6efd !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary {
+    color: #f8f9fa !important;
+    border-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary:hover {
+    background-color: #495057 !important;
+    border-color: #6c757d !important;
+    color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .card {
+    background-color: #2d3748 !important;
+    border-color: #495057 !important;
+    color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .form-control {
+    background-color: #495057 !important;
+    border-color: #6c757d !important;
+    color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .form-control:focus {
+    background-color: #495057 !important;
+    border-color: #0d6efd !important;
+    color: #f8f9fa !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+[data-bs-theme="dark"] .form-control::placeholder {
+    color: #adb5bd !important;
 }
 
 /* Form Container for Onboarding */
