@@ -2381,9 +2381,22 @@ async function uploadImagesWithProgress(files, userId, month, year) {
 async function uploadVideoWithProgress(videoFile, userId, month, year) {
     if (!videoFile) return { url: '', type: '' };
 
-    // Check file size
-    if (videoFile.size > 400 * 1024 * 1024) {
-        throw new Error('Video file is too large. Maximum size is 400MB.');
+    // Check file size - bypass limit for admin accounts
+    let isAdmin = false;
+    try {
+        const userDocRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+            isAdmin = userDoc.data()?.account?.isAdmin || false;
+        }
+    } catch (error) {
+        // Silent error handling - default to non-admin
+    }
+
+    const maxSize = 200 * 1024 * 1024; // 200MB for regular users
+
+    if (!isAdmin && videoFile.size > maxSize) {
+        throw new Error('Video file is too large. Maximum size is 200MB.');
     }
 
     updateProgress(50, `<div class="progress-step"><i class="bi bi-play-circle me-1"></i>Uploading video: ${videoFile.name}</div>`);
