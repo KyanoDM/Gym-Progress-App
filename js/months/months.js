@@ -675,6 +675,9 @@ async function openEditMonthModal(month) {
     window.selectedFiles = []; // Initialize empty array for new file selections
     window.selectedCoverImage = month.coverURL; // Initialize with current cover image
     window.selectedNewCoverIndex = 0; // Initialize cover index for new uploads
+    window.videoToDelete = false; // Initialize flag to track if existing video should be deleted
+    window.existingVideoUrl = month.videoUrl || ''; // Store existing video URL
+    window.existingVideoType = month.videoType || ''; // Store existing video type
 
     // Open the modal
     const modal = new bootstrap.Modal(document.getElementById('addMonthModal'));
@@ -754,12 +757,24 @@ function populateEditForm(month) {
         notesInput.value = month.notes;
     }
 
-    // Video
+    // Video - show existing video preview for uploaded files, or populate URL input for external URLs
     const videoUrlInput = document.getElementById('videoUrlInput');
-    if (videoUrlInput && month.videoUrl && !month.videoUrl.includes('firebasestorage.googleapis.com')) {
-        // Only populate if it's an external URL (not an uploaded file)
-        videoUrlInput.value = month.videoUrl;
+    const videoFileInput = document.getElementById('videoFileInput');
+
+    if (month.videoUrl) {
+        if (month.videoUrl.includes('firebasestorage.googleapis.com')) {
+            // It's an uploaded file - show preview with remove option
+            showExistingVideoPreview(month.videoUrl);
+            // Clear the URL input since this is an uploaded file
+            if (videoUrlInput) videoUrlInput.value = '';
+        } else {
+            // It's an external URL - populate the URL input
+            if (videoUrlInput) videoUrlInput.value = month.videoUrl;
+        }
     }
+
+    // Clear file input
+    if (videoFileInput) videoFileInput.value = '';
 
     // Images - show existing images but don't populate file input
     if (month.imageUrls && month.imageUrls.length > 0) {
@@ -772,6 +787,50 @@ function populateEditForm(month) {
     if (imagesInput) {
         imagesInput.value = '';
     }
+}
+
+function showExistingVideoPreview(videoUrl) {
+    // Find or create video preview container
+    let videoPreviewContainer = document.getElementById('existingVideoPreview');
+
+    if (!videoPreviewContainer) {
+        // Create the container if it doesn't exist
+        const videoSection = document.querySelector('#videoFileInput').closest('.mb-3');
+        videoPreviewContainer = document.createElement('div');
+        videoPreviewContainer.id = 'existingVideoPreview';
+        videoPreviewContainer.className = 'mt-2 p-3 border rounded bg-light';
+        videoSection.parentNode.insertBefore(videoPreviewContainer, videoSection.nextSibling);
+    }
+
+    videoPreviewContainer.innerHTML = `
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-camera-video-fill text-primary me-2" style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong>Current Video</strong>
+                    <br>
+                    <small class="text-muted">Uploaded video file</small>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="removeExistingVideoBtn">
+                <i class="bi bi-trash me-1"></i>Remove
+            </button>
+        </div>
+        <div class="mt-2">
+            <video controls style="max-width: 100%; max-height: 200px; border-radius: 4px;">
+                <source src="${videoUrl}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    `;
+
+    // Add remove functionality
+    const removeBtn = videoPreviewContainer.querySelector('#removeExistingVideoBtn');
+    removeBtn.addEventListener('click', () => {
+        window.videoToDelete = true;
+        window.existingVideoUrl = ''; // Clear the existing video URL
+        videoPreviewContainer.remove();
+    });
 }
 
 function showExistingImages(imageUrls, coverURL) {
@@ -1547,6 +1606,9 @@ function resetAddMonthForm() {
     window.selectedFiles = []; // Reset selected files array
     window.selectedCoverImage = null;
     window.selectedNewCoverIndex = undefined; // Reset to undefined instead of 0
+    window.videoToDelete = false; // Reset video delete flag
+    window.existingVideoUrl = ''; // Reset existing video URL
+    window.existingVideoType = ''; // Reset existing video type
 
     // Reset modal title and button
     const modalTitle = document.getElementById('addMonthModalLabel');
@@ -1579,6 +1641,12 @@ function resetAddMonthForm() {
         imagePreviewContainer.innerHTML = '';
     }
     if (errorDiv) errorDiv.style.display = 'none';
+
+    // Remove existing video preview if it exists
+    const existingVideoPreview = document.getElementById('existingVideoPreview');
+    if (existingVideoPreview) {
+        existingVideoPreview.remove();
+    }
 
     // Reset character counter
     const descriptionCounter = document.getElementById('descriptionCounter');
@@ -2139,12 +2207,25 @@ async function handleEditMonth() {
     }
 
     // Handle video upload/update - only process if video actually changed
-    let videoUrl = currentMonthData.videoUrl || '';
-    let videoType = currentMonthData.videoType || '';
+    let videoUrl = window.existingVideoUrl || '';
+    let videoType = window.existingVideoType || '';
     let videoHasChanged = false;
 
+    // Check if user explicitly marked existing video for deletion
+    if (window.videoToDelete && currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
+        videoHasChanged = true;
+        updateProgress(55, `<div class="progress-step"><i class="bi bi-trash me-1"></i>Removing video...</div>`);
+        try {
+            const oldVideoRef = ref(storage, currentMonthData.videoUrl);
+            await deleteObject(oldVideoRef);
+        } catch (error) {
+            // Silent error handling
+        }
+        videoUrl = '';
+        videoType = '';
+    }
     // Check if new video file was selected
-    if (videoFileInput.files.length > 0) {
+    else if (videoFileInput.files.length > 0) {
         videoHasChanged = true;
         // Delete old video if it exists and is a storage file
         if (currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
@@ -2163,12 +2244,12 @@ async function handleEditMonth() {
         videoUrl = videoResult.url;
         videoType = 'file';
     }
-    // Check if video URL changed
-    else if (videoUrlInput.value.trim() !== (currentMonthData.videoUrl || '')) {
+    // Check if video URL was changed (only for external URLs, not uploaded files)
+    else if (videoUrlInput.value.trim() !== window.existingVideoUrl) {
         videoHasChanged = true;
         const newVideoUrl = videoUrlInput.value.trim();
 
-        // If there's a new URL and it's different from current
+        // If there's a new URL
         if (newVideoUrl) {
             // Delete old video if it was a storage file and now switching to URL
             if (currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
@@ -2184,17 +2265,9 @@ async function handleEditMonth() {
             updateProgress(70, `<div class="progress-step"><i class="bi bi-link-45deg me-1"></i>Updating video URL</div>`);
             videoUrl = newVideoUrl;
             videoType = 'url';
-        } else {
-            // Video URL was cleared - remove video
-            if (currentMonthData.videoUrl && currentMonthData.videoUrl.includes('firebasestorage.googleapis.com')) {
-                updateProgress(60, `<div class="progress-step"><i class="bi bi-trash me-1"></i>Removing video...</div>`);
-                try {
-                    const oldVideoRef = ref(storage, currentMonthData.videoUrl);
-                    await deleteObject(oldVideoRef);
-                } catch (error) {
-                    // Silent error handling
-                }
-            }
+        } else if (window.existingVideoUrl && !window.existingVideoUrl.includes('firebasestorage.googleapis.com')) {
+            // External URL was cleared
+            updateProgress(60, `<div class="progress-step"><i class="bi bi-trash me-1"></i>Removing video URL...</div>`);
             videoUrl = '';
             videoType = '';
         }
