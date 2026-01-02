@@ -28,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     const userSnap = await getDoc(userRef);
 
                     const name = user.displayName;
-                    const photoURL = user.photoURL;
                     const creationTime = user.metadata?.creationTime;
                     const isVerified = false;
                     const isAdmin = false;
@@ -43,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 email,
                                 createdAt: creationTime,
                                 lastLogin: new Date(),
-                                photoURL,
+                                photoURL: "Image/user.png",
                                 username: "Guest",
                                 isVerified,
                                 isAdmin,

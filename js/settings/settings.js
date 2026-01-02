@@ -76,32 +76,36 @@ function loadCurrentUserData() {
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // Load profile picture with skeleton handling
-            const profilePic = document.getElementById("settings-profile-avatar");
-            if (profilePic) {
-                profilePic.onload = () => {
-                    // Hide skeleton background by removing the class
-                    const wrapper = document.getElementById("profile-pic-wrapper");
-                    if (wrapper) {                wrapper.classList.remove("skeleton-circle");
-                    }
-                    profilePic.classList.add("loaded");
-                };
-                profilePic.src = user.photoURL || "Image/user.png";
-            }
-
-            const profilePicElements = document.querySelectorAll(".profile-pic");
-            profilePicElements.forEach(img => {
-                img.src = user.photoURL || "Image/user.png";
-            });
-
-            document.querySelectorAll("#user-avatar").forEach(img => {
-                img.src = user.photoURL || "Image/user.png";
-                img.classList.remove("d-none");
-            });
-
             try {
                 const userDocRef = doc(db, "users", user.uid);
                 const userDocSnap = await getDoc(userDocRef);
+
+                // Get custom photoURL from Firestore instead of auth
+                const photoURL = userDocSnap.exists() ? (userDocSnap.data()?.account?.photoURL || "Image/user.png") : "Image/user.png";
+
+                // Load profile picture with skeleton handling
+                const profilePic = document.getElementById("settings-profile-avatar");
+                if (profilePic) {
+                    profilePic.onload = () => {
+                        // Hide skeleton background by removing the class
+                        const wrapper = document.getElementById("profile-pic-wrapper");
+                        if (wrapper) {
+                            wrapper.classList.remove("skeleton-circle");
+                        }
+                        profilePic.classList.add("loaded");
+                    };
+                    profilePic.src = photoURL;
+                }
+
+                const profilePicElements = document.querySelectorAll(".profile-pic");
+                profilePicElements.forEach(img => {
+                    img.src = photoURL;
+                });
+
+                document.querySelectorAll("#user-avatar").forEach(img => {
+                    img.src = photoURL;
+                    img.classList.remove("d-none");
+                });
 
                 const nameInput = document.getElementById("profile-name");
                 const nameWrapper = document.getElementById("name-input-wrapper");
@@ -277,7 +281,12 @@ function setupProfileForm() {
             const updates = {};
 
             // Delete old photo if uploading new one
-            if (tempUploadedPhotoURL) {                const oldPhotoURL = user.photoURL;
+            if (tempUploadedPhotoURL) {
+                // Get old photoURL from Firestore, not from auth
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                const oldPhotoURL = userDocSnap.exists() ? userDocSnap.data()?.account?.photoURL : null;
+
                 if (oldPhotoURL && !oldPhotoURL.includes("Image/user.png")) { // assuming this is default image URL
                     try {
                         const url = new URL(oldPhotoURL);
@@ -333,7 +342,11 @@ function setupProfileForm() {
                 await updateDoc(userDocRef, updates);
             }
 
-            const newPhotoURL = updates["account.photoURL"] || user.photoURL || "Image/user.png";
+            // Get photoURL from Firestore after update
+            const userDocRef = doc(db, "users", user.uid);
+            const updatedUserSnap = await getDoc(userDocRef);
+            const newPhotoURL = updatedUserSnap.exists() ? (updatedUserSnap.data()?.account?.photoURL || "Image/user.png") : "Image/user.png";
+
             document.querySelectorAll(".profile-pic").forEach(img => img.src = newPhotoURL);
             document.querySelectorAll("#user-avatar").forEach(img => {
                 img.src = newPhotoURL;

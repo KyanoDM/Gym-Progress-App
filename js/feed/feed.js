@@ -112,21 +112,34 @@ async function loadUserMonths(userId) {
     }
 }
 
-function loadUserAvatar(user) {
+async function loadUserAvatar(user) {
     const avatarWrapper = document.getElementById('user-avatar-wrapper');
     const avatarImg = document.getElementById('user-avatar');
 
-    if (user.photoURL) {
-        avatarImg.src = user.photoURL;
-        avatarImg.onload = () => {
+    try {
+        // Get custom photoURL from Firestore instead of auth
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        const photoURL = userSnap.exists() ? userSnap.data()?.account?.photoURL : null;
+
+        if (photoURL) {
+            avatarImg.src = photoURL;
+            avatarImg.onload = () => {
+                avatarWrapper.classList.remove('skeleton', 'skeleton-circle', 'skeleton-avatar-sm');
+                avatarImg.style.display = 'block';
+            };
+        } else {
+            // Use default avatar or user's initials
             avatarWrapper.classList.remove('skeleton', 'skeleton-circle', 'skeleton-avatar-sm');
-            avatarImg.style.display = 'block';
-        };
-    } else {
-        // Use default avatar or user's initials
+            const displayName = userSnap.exists() ? (userSnap.data()?.account?.name || userSnap.data()?.account?.username) : user.displayName;
+            avatarWrapper.innerHTML = '<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-weight: bold;">' +
+                (displayName ? displayName.charAt(0).toUpperCase() : 'U') + '</div>';
+        }
+    } catch (error) {
+        console.error('Error loading user avatar:', error);
+        // Fallback to default
         avatarWrapper.classList.remove('skeleton', 'skeleton-circle', 'skeleton-avatar-sm');
-        avatarWrapper.innerHTML = '<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-weight: bold;">' +
-            (user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U') + '</div>';
+        avatarWrapper.innerHTML = '<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-weight: bold;">U</div>';
     }
 }
 
@@ -501,8 +514,6 @@ async function createPost() {
             postData = {
                 type: 'month',
                 userId: user.uid,
-                userDisplayName: user.displayName || user.email?.split('@')[0] || 'Anonymous',
-                userPhotoURL: user.photoURL || null,
                 monthId: selectedMonth.id,
                 monthData: {
                     month: selectedMonth.month,
@@ -531,8 +542,6 @@ async function createPost() {
             postData = {
                 type: 'transformation',
                 userId: user.uid,
-                userDisplayName: user.displayName || user.email?.split('@')[0] || 'Anonymous',
-                userPhotoURL: user.photoURL || null,
                 beforeMonth: {
                     id: selectedBeforeMonth.id,
                     month: selectedBeforeMonth.month,
@@ -702,8 +711,25 @@ async function loadFeedPosts() {
         if (posts.length === 0) {
             showEmptyFeedMessage(feedContainer);
         } else {
+            // Load user data for all unique user IDs in posts
+            const userIds = [...new Set(posts.map(p => p.userId))];
+            const usersCache = {};
+
+            for (const userId of userIds) {
+                try {
+                    const userDocRef = doc(db, 'users', userId);
+                    const userSnap = await getDoc(userDocRef);
+                    if (userSnap.exists()) {
+                        usersCache[userId] = userSnap.data();
+                    }
+                } catch (err) {
+                    console.error('Error loading user data:', err);
+                }
+            }
+
             posts.forEach(post => {
-                const postElement = createPostElement(post);
+                const userData = usersCache[post.userId];
+                const postElement = createPostElement(post, userData);
                 feedContainer.appendChild(postElement);
             });
         }
@@ -771,13 +797,13 @@ function showFeedError(container) {
     `;
 }
 
-function createPostElement(post) {
+function createPostElement(post, userData) {
     const postDiv = document.createElement('div');
     postDiv.className = 'card shadow-sm';
 
     const timeAgo = getTimeAgo(post.createdAt);
-    const userName = post.userDisplayName || 'Anonymous';
-    const userAvatar = post.userPhotoURL || null;
+    const userName = userData?.account?.username || userData?.account?.name || 'Anonymous';
+    const userAvatar = userData?.account?.photoURL || null;
 
     if (post.type === 'month') {
         postDiv.innerHTML = createMonthPostHTML(post, userName, userAvatar, timeAgo);

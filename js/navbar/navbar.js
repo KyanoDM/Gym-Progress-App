@@ -152,13 +152,18 @@ onAuthStateChanged(auth, async (user) => {
         sidebarAvatarImg.style.display = "none";
     }
 
+    // Fetch user data from Firestore
+    const userSnap = await getDoc(doc(db, "users", user.uid));
+    const account = userSnap.data()?.account || {};
+
     // Load sidebar avatar and on load show image + remove skeleton wrapper classes
     if (sidebarAvatarImg && sidebarAvatarWrapper) {
         sidebarAvatarImg.onload = () => {
             sidebarAvatarImg.style.display = "block";
             sidebarAvatarWrapper.classList.remove("skeleton", "skeleton-circle", "skeleton-avatar-lg");
         };
-        sidebarAvatarImg.src = user.photoURL || "Image/user.png";
+        // Use custom photoURL from Firestore instead of auth photoURL
+        sidebarAvatarImg.src = account.photoURL || "Image/user.png";
     }
 
     // For followers/following counts — skeleton classes already applied in HTML
@@ -169,10 +174,6 @@ onAuthStateChanged(auth, async (user) => {
     if (followingCountSpan) {
         followingCountSpan.textContent = "";
     }
-
-    // Fetch user data from Firestore
-    const userSnap = await getDoc(doc(db, "users", user.uid));
-    const account = userSnap.data()?.account || {};
 
     // Update counts and remove skeleton once loaded
     if (followerCountSpan) {
