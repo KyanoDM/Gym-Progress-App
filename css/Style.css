@@ -1875,7 +1875,7 @@ body:not(.modal-open) .modal-backdrop {
     border-radius: 12px;
     overflow: hidden;
     display: flex;
-    height: 100%;
+    height: 160px;
     cursor: pointer;
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
@@ -1888,6 +1888,8 @@ body:not(.modal-open) .modal-backdrop {
 
 .month-mini-img {
     flex: 0 0 40%;
+    width: 40%;
+    height: 100%;
     background: var(--bg-muted);
     object-fit: cover;
 }
@@ -1937,3 +1939,79 @@ body:not(.modal-open) .modal-backdrop {
 .trend-up   { color: #059669; }
 .trend-down { color: #dc2626; }
 .trend-flat { color: var(--text-muted); }
+
+/* Lift existing Bootstrap cards into the dash aesthetic automatically */
+.dash .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border) !important;
+    border-radius: 16px;
+    box-shadow: none !important;
+}
+
+.dash .card-header {
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+}
+
+.dash h3,
+.dash h4,
+.dash h5 {
+    letter-spacing: -0.005em;
+}
+
+.dash .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+.dash .btn-primary:hover,
+.dash .btn-primary:focus {
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+}
+
+.dash .btn-outline-primary {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+.dash .btn-outline-primary:hover,
+.dash .btn-outline-primary.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+.dash .btn-check:checked + .btn-outline-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+.dash .list-group-item.active {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.dash .text-primary {
+    color: var(--accent) !important;
+}
+
+.dash .badge.bg-primary {
+    background: var(--accent) !important;
+}
+
+/* Page-title variant of the hero for non-dashboard pages */
+.dash-hero-simple {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+.dash-hero-simple h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+.dash-hero-simple .dash-subtitle {
+    font-size: 0.9rem;
+}
