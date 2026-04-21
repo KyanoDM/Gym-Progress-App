@@ -24,6 +24,50 @@ import {
     deleteObject,
     ref
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-storage.js";
+import { showToast } from "../utils/toast.js";
+
+function validateMonthFormInputs({ monthSelect, yearInput, weightInput, gymVisitsInput, notesInput, descriptionInput, videoUrlInput }) {
+    if (!monthSelect.value) throw new Error('Please select a month.');
+    if (!yearInput.value) throw new Error('Please enter a year.');
+
+    const yearValue = parseInt(yearInput.value);
+    const currentYear = new Date().getFullYear();
+    if (!Number.isInteger(yearValue) || yearValue < 2020 || yearValue > currentYear + 5) {
+        throw new Error(`Year must be a whole number between 2020 and ${currentYear + 5}.`);
+    }
+
+    if (weightInput?.value) {
+        const w = parseFloat(weightInput.value);
+        if (Number.isNaN(w) || w < 20 || w > 500) {
+            throw new Error('Weight must be between 20 and 500 kg.');
+        }
+    }
+
+    if (gymVisitsInput?.value) {
+        const v = parseInt(gymVisitsInput.value);
+        if (!Number.isInteger(v) || v < 0 || v > 31) {
+            throw new Error('Gym visits must be a whole number between 0 and 31.');
+        }
+    }
+
+    if (descriptionInput && descriptionInput.value.length > 100) {
+        throw new Error('Description must be 100 characters or fewer.');
+    }
+
+    if (notesInput && notesInput.value.length > 500) {
+        throw new Error('Notes must be 500 characters or fewer.');
+    }
+
+    const videoUrl = videoUrlInput?.value?.trim();
+    if (videoUrl) {
+        try {
+            const u = new URL(videoUrl);
+            if (!/^https?:$/.test(u.protocol)) throw new Error();
+        } catch {
+            throw new Error('Video URL must be a valid http(s) link.');
+        }
+    }
+}
 
 const db = getFirestore(app);
 
@@ -566,7 +610,7 @@ async function incrementMonthsCount(userId) {
             'account.monthsCount': increment(1)
         });
     } catch (error) {
-        // Silent error handling
+        console.warn("[non-critical failure]", error);
     }
 }
 
@@ -577,7 +621,7 @@ async function decrementMonthsCount(userId) {
             'account.monthsCount': increment(-1)
         });
     } catch (error) {
-        // Silent error handling
+        console.warn("[non-critical failure]", error);
     }
 }
 
@@ -589,7 +633,7 @@ async function syncMonthsCount(userId, actualCount) {
             'account.monthsCount': actualCount
         });
     } catch (error) {
-        // Silent error handling
+        console.warn("[non-critical failure]", error);
     }
 }
 
@@ -603,7 +647,7 @@ async function updateTotalVisits(userId, visitsDelta) {
             'account.totalVisits': increment(visitsDelta)
         });
     } catch (error) {
-        // Silent error handling
+        console.warn("[non-critical failure]", error);
     }
 }
 
@@ -1475,7 +1519,7 @@ async function handleDeleteMonth(monthId, monthName, year) {
                     const imageRef = ref(storage, imageUrl);
                     await deleteObject(imageRef);
                 } catch (error) {
-                    // Silent error handling
+                    console.warn("[non-critical failure]", error);
                 }
             });
 
@@ -1497,7 +1541,7 @@ async function handleDeleteMonth(monthId, monthName, year) {
                     // Skip video deletion for external URLs
                 }
             } catch (error) {
-                // Silent error handling
+                console.warn("[non-critical failure]", error);
             }
         }
 
@@ -2012,20 +2056,9 @@ async function handleAddMonth() {
     const imagesInput = document.getElementById('imagesInput');
     const errorDiv = document.getElementById('addMonthError');
 
-    // Validate required fields
-    if (!monthSelect.value) {
-        throw new Error('Please select a month.');
-    }
-    if (!yearInput.value) {
-        throw new Error('Please enter a year.');
-    }
-
+    // Validate inputs
+    validateMonthFormInputs({ monthSelect, yearInput, weightInput, gymVisitsInput, notesInput, descriptionInput, videoUrlInput });
     const yearValue = parseInt(yearInput.value);
-    const currentYear = new Date().getFullYear();
-
-    if (yearValue < 2020 || yearValue > currentYear + 5) {
-        throw new Error(`Year must be between 2020 and ${currentYear + 5}.`);
-    }
 
     const userId = auth.currentUser.uid;
     const month = monthSelect.value.toLowerCase();
@@ -2121,20 +2154,9 @@ async function handleEditMonth() {
     const imagesInput = document.getElementById('imagesInput');
     const errorDiv = document.getElementById('addMonthError');
 
-    // Validate required fields
-    if (!monthSelect.value) {
-        throw new Error('Please select a month.');
-    }
-    if (!yearInput.value) {
-        throw new Error('Please enter a year.');
-    }
-
+    // Validate inputs
+    validateMonthFormInputs({ monthSelect, yearInput, weightInput, gymVisitsInput, notesInput, descriptionInput, videoUrlInput });
     const yearValue = parseInt(yearInput.value);
-    const currentYear = new Date().getFullYear();
-
-    if (yearValue < 2020 || yearValue > currentYear + 5) {
-        throw new Error(`Year must be between 2020 and ${currentYear + 5}.`);
-    }
 
     const userId = auth.currentUser.uid;
     const month = monthSelect.value.toLowerCase();
@@ -2169,7 +2191,7 @@ async function handleEditMonth() {
                 const imageRef = ref(storage, imageUrl);
                 await deleteObject(imageRef);
             } catch (error) {
-                // Silent error handling
+                console.warn("[non-critical failure]", error);
             }
         });
         await Promise.all(deletePromises);
@@ -2219,7 +2241,7 @@ async function handleEditMonth() {
             const oldVideoRef = ref(storage, currentMonthData.videoUrl);
             await deleteObject(oldVideoRef);
         } catch (error) {
-            // Silent error handling
+            console.warn("[non-critical failure]", error);
         }
         videoUrl = '';
         videoType = '';
@@ -2234,7 +2256,7 @@ async function handleEditMonth() {
                 const oldVideoRef = ref(storage, currentMonthData.videoUrl);
                 await deleteObject(oldVideoRef);
             } catch (error) {
-                // Silent error handling
+                console.warn("[non-critical failure]", error);
             }
         }
 
@@ -2258,7 +2280,7 @@ async function handleEditMonth() {
                     const oldVideoRef = ref(storage, currentMonthData.videoUrl);
                     await deleteObject(oldVideoRef);
                 } catch (error) {
-                    // Silent error handling
+                    console.warn("[non-critical failure]", error);
                 }
             }
 
@@ -2320,38 +2342,6 @@ function showError(errorDiv, message) {
     }
 }
 
-function showToast(message, type = 'success') {
-    const toastContainer = document.querySelector('.toast-container');
-    if (!toastContainer) return;
-
-    const toastId = `toast-${Date.now()}`;
-    const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
-    const icon = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle';
-
-    const toastHTML = `
-        <div class="toast ${toastClass} text-white" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header ${toastClass} text-white border-0">
-                <i class="bi ${icon} me-2"></i>
-                <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">
-                ${message}
-            </div>
-        </div>
-    `;
-
-    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-
-    const toastElement = document.getElementById(toastId);
-    const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
-    toast.show();
-
-    // Remove toast element after it's hidden
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        toastElement.remove();
-    });
-}
 
 // Progress Bar Functions
 function showUploadProgress() {
@@ -2463,7 +2453,7 @@ async function uploadVideoWithProgress(videoFile, userId, month, year) {
             isAdmin = userDoc.data()?.account?.isAdmin || false;
         }
     } catch (error) {
-        // Silent error handling - default to non-admin
+        console.warn("[admin check failed]", error);
     }
 
     const maxSize = 200 * 1024 * 1024; // 200MB for regular users

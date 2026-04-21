@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     window.location.href = "index.html";
                 })
                 .catch(err => {
-                    // Silent error handling
+                    console.warn("[non-critical failure]", error);
                 });
         });
     }

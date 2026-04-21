@@ -15,6 +15,8 @@
     <script type="module" src="js/navbar/navbar.js"></script>
     <script src="js/utils/theme-logo.js"></script>
     <script type="module" src="js/utils/auth-guard.js"></script>
+    <script type="module" src="js/utils/toast.js"></script>
+    <script type="module" src="js/utils/onboarding-alert.js"></script>
     <!-- Apply theme immediately to prevent flash -->
     <script>
         (function () {
@@ -113,7 +115,7 @@
         </nav>
 
         <!-- Main Content -->
-        <div class="flex-grow-1" style="overflow-y: auto; height: 100vh;">
+        <div class="flex-grow-1 dash" style="overflow-y: auto; height: 100vh;">
             <!-- Onboarding Reminder -->
             <div class="alert alert-warning d-flex align-items-center justify-content-between p-3 mt-4 mx-auto hidden"
                 role="alert" id="onboarding-alert" style="max-width: 1200px;">
@@ -127,207 +129,159 @@
                 <button class="btn btn-sm btn-primary ms-3">Complete</button>
             </div>
 
-            <div class="container-fluid mt-4 px-4 pb-4">
-                <!-- Welcome Section -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div>
-                                <h2 class="mb-1">
-                                    <span id="welcome-message">
-                                        <i class="bi bi-sun me-2 text-warning"></i>Good morning, <span id="user-name"
-                                            class="skeleton skeleton-text d-inline-block"
-                                            style="width: 100px; height: 28px;">User</span>!
-                                    </span>
-                                </h2>
-                                <p class="text-muted mb-0" id="welcome-subtitle">Here's your fitness journey overview
-                                </p>
-                            </div>
-                            <div class="text-end">
-                                <small class="text-muted" id="current-date"></small>
-                            </div>
-                        </div>
+            <div class="container-fluid dash-container py-4 px-4">
+                <header class="dash-hero mb-4">
+                    <div>
+                        <h1 class="dash-greeting mb-1">
+                            <span id="welcome-message">
+                                <i class="bi bi-sun me-2"></i>Good morning, <span id="user-name"
+                                    class="skeleton skeleton-text d-inline-block"
+                                    style="width: 120px; height: 28px;">User</span>
+                            </span>
+                        </h1>
+                        <p class="dash-subtitle mb-0" id="welcome-subtitle">Here's where you're at today.</p>
                     </div>
-                </div>
+                    <div class="dash-hero-meta">
+                        <div class="streak-pill" id="streak-pill" title="Consecutive months tracked">
+                            <i class="bi bi-fire"></i>
+                            <span><span id="streak-count">0</span>&nbsp;month streak</span>
+                        </div>
+                        <small class="text-muted d-block mt-2" id="current-date"></small>
+                    </div>
+                </header>
 
-                <!-- Stats Cards Row -->
-                <div class="row mb-4">
-                    <!-- Current Weight Card -->
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm"
-                            style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);">
-                            <div class="card-body text-center text-white">
-                                <div class="d-flex align-items-center justify-content-center mb-2">
-                                    <i class="bi bi-speedometer2 me-2" style="font-size: 1.5rem;"></i>
-                                    <h6 class="card-title mb-0 text-white">Current Weight</h6>
-                                </div>
-                                <h3 class="mb-1 text-white" id="current-weight"
-                                    class="skeleton skeleton-text d-inline-block" style="width: 80px; height: 32px;">--
-                                </h3>
-                                <small class="text-white-50" id="weight-unit">kg</small>
+                <section class="stat-grid mb-4">
+                    <div class="stat-tile">
+                        <div class="stat-icon stat-icon-violet"><i class="bi bi-speedometer2"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-label">Current weight</div>
+                            <div class="stat-value">
+                                <span id="current-weight" class="skeleton skeleton-text d-inline-block"
+                                    style="width: 70px; height: 30px;">--</span>
+                                <span class="stat-unit" id="weight-unit">kg</span>
                             </div>
+                            <div class="stat-trend" id="weight-change">
+                                <span class="skeleton skeleton-text d-inline-block" style="width: 80px; height: 14px;"></span>
+                            </div>
+                            <small class="stat-foot" id="weight-change-period">&nbsp;</small>
                         </div>
                     </div>
 
-                    <!-- Weight Change Card -->
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm"
-                            style="background: linear-gradient(90deg, #764ba2 0%, #f093fb 100%);">
-                            <div class="card-body text-center text-white">
-                                <div class="d-flex align-items-center justify-content-center mb-2">
-                                    <i class="bi bi-graph-up me-2" style="font-size: 1.5rem;"></i>
-                                    <h6 class="card-title mb-0 text-white">Weight Change</h6>
-                                </div>
-                                <h3 class="mb-1 text-white" id="weight-change"
-                                    class="skeleton skeleton-text d-inline-block" style="width: 80px; height: 32px;">--
-                                </h3>
-                                <small class="text-white-50" id="weight-change-period">Last 3 months</small>
+                    <div class="stat-tile">
+                        <div class="stat-icon stat-icon-amber"><i class="bi bi-fire"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-label">Active streak</div>
+                            <div class="stat-value">
+                                <span id="total-months" class="skeleton skeleton-text d-inline-block"
+                                    style="width: 50px; height: 30px;">--</span>
+                                <span class="stat-unit">months</span>
                             </div>
+                            <div class="stat-trend text-muted">Total tracked</div>
+                            <small class="stat-foot">&nbsp;</small>
                         </div>
                     </div>
 
-                    <!-- Total Months Card -->
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm"
-                            style="background: linear-gradient(90deg, #f093fb 0%, #4facfe 100%);">
-                            <div class="card-body text-center text-white">
-                                <div class="d-flex align-items-center justify-content-center mb-2">
-                                    <i class="bi bi-calendar-check me-2" style="font-size: 1.5rem;"></i>
-                                    <h6 class="card-title mb-0 text-white">Total Months</h6>
-                                </div>
-                                <h3 class="mb-1 text-white" id="total-months"
-                                    class="skeleton skeleton-text d-inline-block" style="width: 60px; height: 32px;">--
-                                </h3>
-                                <small class="text-white-50">Tracked</small>
+                    <div class="stat-tile">
+                        <div class="stat-icon stat-icon-green"><i class="bi bi-calendar-check"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-label">Gym visits</div>
+                            <div class="stat-value">
+                                <span id="total-gym-visits" class="skeleton skeleton-text d-inline-block"
+                                    style="width: 60px; height: 30px;">--</span>
+                                <span class="stat-unit">total</span>
                             </div>
+                            <div class="stat-trend text-muted" id="visits-avg">&nbsp;</div>
+                            <small class="stat-foot">&nbsp;</small>
                         </div>
                     </div>
 
-                    <!-- Total Gym Visits Card -->
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm"
-                            style="background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);">
-                            <div class="card-body text-center text-white">
-                                <div class="d-flex align-items-center justify-content-center mb-2">
-                                    <i class="bi bi-calendar-check me-2" style="font-size: 1.5rem;"></i>
-                                    <h6 class="card-title mb-0 text-white">Total Gym Visits</h6>
-                                </div>
-                                <h3 class="mb-1 text-white" id="total-gym-visits">
-                                    <span class="skeleton skeleton-text d-inline-block"
-                                        style="width: 60px; height: 32px;">--</span>
-                                </h3>
-                                <small class="text-white-50">Visits</small>
+                    <div class="stat-tile">
+                        <div class="stat-icon stat-icon-rose"><i class="bi bi-star-fill"></i></div>
+                        <div class="stat-body">
+                            <div class="stat-label">Avg rating</div>
+                            <div class="stat-value">
+                                <span id="avg-rating" class="skeleton skeleton-text d-inline-block"
+                                    style="width: 60px; height: 30px;">--</span>
+                                <span class="stat-unit">/ 10</span>
                             </div>
+                            <div class="stat-trend text-muted" id="rating-foot">&nbsp;</div>
+                            <small class="stat-foot">&nbsp;</small>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <!-- Weight Chart & Quick Actions Row -->
-                <div class="row mb-4">
-                    <!-- Weight Chart -->
-                    <div class="col-lg-8 mb-4">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-header bg-transparent border-0 pb-0">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h5 class="card-title mb-0">
-                                            <i class="bi bi-graph-up me-2 text-primary"></i><span
-                                                id="chart-title">Weight Progress</span>
-                                        </h5>
-                                        <small class="text-muted">Last 6 months</small>
-                                    </div>
-                                    <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-outline-primary btn-sm active"
-                                            id="weight-chart-btn" onclick="switchChart('weight')">Weight</button>
-                                        <button type="button" class="btn btn-outline-primary btn-sm"
-                                            id="visits-chart-btn" onclick="switchChart('visits')">Visits</button>
-                                        <button type="button" class="btn btn-outline-primary btn-sm"
-                                            id="rating-chart-btn" onclick="switchChart('rating')">Rating</button>
-                                    </div>
+                <section class="row g-4 mb-4">
+                    <div class="col-lg-8">
+                        <div class="panel h-100">
+                            <div class="panel-head">
+                                <div>
+                                    <h5 class="panel-title mb-0"><span id="chart-title">Weight Progress</span></h5>
+                                    <small class="text-muted">Last 6 months</small>
+                                </div>
+                                <div class="seg-toggle" role="group">
+                                    <button type="button" class="seg-btn active" id="weight-chart-btn"
+                                        onclick="switchChart('weight')">Weight</button>
+                                    <button type="button" class="seg-btn" id="visits-chart-btn"
+                                        onclick="switchChart('visits')">Visits</button>
+                                    <button type="button" class="seg-btn" id="rating-chart-btn"
+                                        onclick="switchChart('rating')">Rating</button>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <div class="position-relative">
-                                    <canvas id="weightChart" width="400" height="200"></canvas>
+                            <div class="panel-body">
+                                <div class="position-relative" style="height: 280px;">
+                                    <canvas id="weightChart"></canvas>
                                     <div id="chart-skeleton" class="skeleton"
-                                        style="width: 100%; height: 200px; border-radius: 8px;">
-                                    </div>
+                                        style="width: 100%; height: 100%; border-radius: 8px;"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Quick Actions -->
-                    <div class="col-lg-4 mb-4">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-header bg-transparent border-0 pb-0">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-lightning-fill me-2 text-warning"></i>Quick Actions
-                                </h5>
+                    <div class="col-lg-4">
+                        <div class="panel h-100">
+                            <div class="panel-head">
+                                <h5 class="panel-title mb-0">Quick actions</h5>
                             </div>
-                            <div class="card-body d-flex flex-column">
-                                <!-- Fill Current Month Button (conditionally shown) -->
-                                <button
-                                    class="btn btn-success btn-lg mb-3 d-flex align-items-center justify-content-center"
-                                    id="fill-current-month-btn" style="display: none;">
+                            <div class="panel-body d-flex flex-column gap-2">
+                                <button class="btn btn-action btn-action-primary" id="fill-current-month-btn"
+                                    style="display: none;">
                                     <i class="bi bi-calendar-plus me-2"></i>
                                     <span id="fill-month-text">Fill Current Month</span>
                                 </button>
-                                <button
-                                    class="btn btn-primary btn-lg mb-3 d-flex align-items-center justify-content-center"
-                                    id="add-month-btn">
-                                    <i class="bi bi-plus-circle me-2"></i>
-                                    Add New Month
+                                <button class="btn btn-action btn-action-accent" id="add-month-btn">
+                                    <i class="bi bi-plus-circle me-2"></i>Add new month
                                 </button>
-                                <button
-                                    class="btn btn-outline-primary d-flex align-items-center justify-content-center"
+                                <button class="btn btn-action btn-action-ghost"
                                     onclick="window.location.href='months.html'">
-                                    <i class="bi bi-calendar3 me-2"></i>
-                                    View All Months
+                                    <i class="bi bi-calendar3 me-2"></i>View all months
+                                </button>
+                                <button class="btn btn-action btn-action-ghost"
+                                    onclick="window.location.href='settings.html'">
+                                    <i class="bi bi-gear me-2"></i>Settings
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <!-- Recent Months Section -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-header bg-transparent border-0 pb-0">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="card-title mb-0">
-                                        <i class="bi bi-clock-history me-2 text-info"></i>Recent Months
-                                    </h5>
-                                    <a href="months.html" class="btn btn-sm btn-outline-primary">
-                                        View All <i class="bi bi-arrow-right ms-1"></i>
-                                    </a>
-                                </div>
+                <section class="panel">
+                    <div class="panel-head">
+                        <h5 class="panel-title mb-0">Recent months</h5>
+                        <a href="months.html" class="link-accent">
+                            View all <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row g-3" id="recent-months-container">
+                            <div class="col-md-6">
+                                <div class="skeleton" style="width: 100%; height: 150px; border-radius: 12px;"></div>
                             </div>
-                            <div class="card-body">
-                                <div class="row" id="recent-months-container">
-                                    <!-- Recent months will be loaded here -->
-                                    <div class="col-md-6 mb-3">
-                                        <div class="card border h-100">
-                                            <div class="card-body">
-                                                <div class="skeleton"
-                                                    style="width: 100%; height: 150px; border-radius: 8px;"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <div class="card border h-100">
-                                            <div class="card-body">
-                                                <div class="skeleton"
-                                                    style="width: 100%; height: 150px; border-radius: 8px;"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="col-md-6">
+                                <div class="skeleton" style="width: 100%; height: 150px; border-radius: 12px;"></div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
             </div>
         </div>
     </div>

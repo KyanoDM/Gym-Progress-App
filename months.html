@@ -13,6 +13,8 @@
     <script type="module" src="js/navbar/navbar.js"></script>
     <script src="js/utils/theme-logo.js"></script>
     <script type="module" src="js/utils/auth-guard.js"></script>
+    <script type="module" src="js/utils/toast.js"></script>
+    <script type="module" src="js/utils/onboarding-alert.js"></script>
     <!-- Apply theme immediately to prevent flash -->
     <script>
         (function () {
@@ -185,8 +187,8 @@
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="yearInput" class="form-label">Year *</label>
-                                        <input type="number" class="form-control" id="yearInput" min="2020" max="2030"
-                                            value="2025" required>
+                                        <input type="number" class="form-control" id="yearInput" min="2020"
+                                            required>
                                     </div>
                                 </div>
                                 <div class="mb-3">
@@ -211,8 +213,8 @@
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
                                         <label for="weightInput" class="form-label">Weight (kg)</label>
-                                        <input type="number" class="form-control" id="weightInput" step="0.1" min="0"
-                                            placeholder="Enter your weight">
+                                        <input type="number" class="form-control" id="weightInput" step="0.1" min="20"
+                                            max="500" placeholder="Enter your weight">
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="gymVisitsInput" class="form-label">Gym Visits</label>
@@ -232,8 +234,9 @@
                                 </div>
                                 <div class="mb-3">
                                     <label for="notesInput" class="form-label">Notes</label>
-                                    <textarea class="form-control" id="notesInput" rows="2"
+                                    <textarea class="form-control" id="notesInput" rows="2" maxlength="500"
                                         placeholder="Workout details, diet changes, challenges, achievements..."></textarea>
+                                    <small class="form-text text-muted">Up to 500 characters.</small>
                                 </div>
                             </div>
 
