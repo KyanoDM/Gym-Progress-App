@@ -1,4 +1,5 @@
 import { app } from "../firebase/config.js";
+import { showToast } from "../utils/toast.js";
 import {
     getAuth,
     onAuthStateChanged,
@@ -190,6 +191,75 @@ function updateStats(months) {
     totalGymVisitsEl.classList.remove('skeleton', 'skeleton-text');
     totalGymVisitsEl.style.width = 'auto';
     totalGymVisitsEl.style.height = 'auto';
+
+    // Avg visits per tracked month
+    const visitsAvgEl = document.getElementById('visits-avg');
+    if (visitsAvgEl) {
+        const monthsWithVisits = months.filter(m => typeof m.gymVisits === 'number');
+        if (monthsWithVisits.length > 0) {
+            const avg = monthsWithVisits.reduce((s, m) => s + m.gymVisits, 0) / monthsWithVisits.length;
+            visitsAvgEl.textContent = `${avg.toFixed(1)} avg / month`;
+        } else {
+            visitsAvgEl.innerHTML = '&nbsp;';
+        }
+    }
+
+    // Average rating
+    const avgRatingEl = document.getElementById('avg-rating');
+    const ratingFootEl = document.getElementById('rating-foot');
+    if (avgRatingEl) {
+        const rated = months.filter(m => typeof m.rating === 'number');
+        if (rated.length > 0) {
+            const avg = rated.reduce((s, m) => s + m.rating, 0) / rated.length;
+            avgRatingEl.textContent = avg.toFixed(1);
+        } else {
+            avgRatingEl.textContent = '--';
+        }
+        avgRatingEl.classList.remove('skeleton', 'skeleton-text');
+        avgRatingEl.style.width = 'auto';
+        avgRatingEl.style.height = 'auto';
+        if (ratingFootEl) {
+            ratingFootEl.textContent = rated.length > 0
+                ? `From ${rated.length} month${rated.length === 1 ? '' : 's'}`
+                : '';
+        }
+    }
+
+    // Streak (consecutive months ending at the most recent tracked month)
+    const streakEl = document.getElementById('streak-count');
+    if (streakEl) {
+        streakEl.textContent = computeStreak(months).toString();
+    }
+}
+
+function computeStreak(months) {
+    if (!months.length) return 0;
+    const monthOrder = {
+        january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
+        july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
+    };
+    const ordered = [...months]
+        .map(m => ({ y: m.year, m: monthOrder[m.month?.toLowerCase()] ?? -1 }))
+        .filter(m => m.m >= 0)
+        .sort((a, b) => (b.y - a.y) || (b.m - a.m));
+    if (!ordered.length) return 0;
+
+    let streak = 1;
+    let prev = ordered[0];
+    for (let i = 1; i < ordered.length; i++) {
+        const cur = ordered[i];
+        // Expect cur to be exactly one month before prev
+        let expectedY = prev.y;
+        let expectedM = prev.m - 1;
+        if (expectedM < 0) { expectedM = 11; expectedY -= 1; }
+        if (cur.y === expectedY && cur.m === expectedM) {
+            streak += 1;
+            prev = cur;
+        } else {
+            break;
+        }
+    }
+    return streak;
 }
 
 function calculateWeightChange(months, weightChangeEl) {
@@ -446,12 +516,13 @@ function updateRecentMonths(recentMonths) {
 
 function createRecentMonthCard(month) {
     const monthCol = document.createElement('div');
-    monthCol.className = 'col-md-6 mb-3';
+    monthCol.className = 'col-md-6';
 
     const monthName = month.month ? month.month.charAt(0).toUpperCase() + month.month.slice(1) : 'Unknown';
     const year = month.year || new Date().getFullYear();
     const rating = month.rating || 5;
-    const ratingClass = getRatingBadgeClass(rating);    // Get cover image
+    const ratingClass = getRatingBadgeClass(rating);
+
     let coverImage = 'Image/user.png';
     if (month.coverURL) {
         coverImage = month.coverURL;
@@ -460,34 +531,20 @@ function createRecentMonthCard(month) {
     }
 
     monthCol.innerHTML = `
-        <div class="card border h-100 hover-card" style="cursor: pointer;" onclick="window.location.href='months.html'">
-            <div class="row g-0 h-100">
-                <div class="col-5">
-                    <div class="position-relative h-100">
-                        <div class="skeleton" style="width: 100%; height: 100%; border-radius: 8px 0 0 8px;"></div>
-                        <img src="${coverImage}" class="img-fluid h-100 w-100 rounded-start" 
-                             style="object-fit: cover; display: none;" 
-                             onload="this.previousElementSibling.style.display='none'; this.style.display='block';"
-                             onerror="this.src='Image/user.png'; this.previousElementSibling.style.display='none'; this.style.display='block';"
-                             alt="${monthName} ${year}">
-                    </div>
+        <div class="month-mini" onclick="window.location.href='months.html'">
+            <img src="${coverImage}" class="month-mini-img" alt="${monthName} ${year}"
+                 onerror="this.src='Image/user.png';">
+            <div class="month-mini-body">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <div class="month-mini-title">${monthName} ${year}</div>
+                    <span class="badge ${ratingClass}"><i class="bi bi-star-fill me-1"></i>${rating}/10</span>
                 </div>
-                <div class="col-7">
-                    <div class="card-body p-3 d-flex flex-column h-100">
-                        <div class="mb-2">
-                            <h6 class="card-title mb-1 fw-bold">${monthName} ${year}</h6>
-                            <span class="badge ${ratingClass}">
-                                <i class="bi bi-star-fill me-1"></i>${rating}/10
-                            </span>
-                        </div>
-                        <p class="card-text small text-muted flex-grow-1 mb-2" style="font-size: 0.85rem;">
-                            ${month.description || 'No description available.'}
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center small text-muted">
-                            ${month.weight ? `<span><i class="bi bi-speedometer2 me-1"></i>${month.weight} kg</span>` : '<span></span>'}
-                            ${month.gymVisits ? `<span><i class="bi bi-calendar-check me-1"></i>${month.gymVisits} visits</span>` : '<span></span>'}
-                        </div>
-                    </div>
+                <p class="text-muted small mb-2" style="font-size: 0.85rem;">
+                    ${month.description || 'No description available.'}
+                </p>
+                <div class="month-mini-meta">
+                    ${month.weight ? `<span><i class="bi bi-speedometer2 me-1"></i>${month.weight} kg</span>` : ''}
+                    ${month.gymVisits ? `<span><i class="bi bi-calendar-check me-1"></i>${month.gymVisits} visits</span>` : ''}
                 </div>
             </div>
         </div>
@@ -498,15 +555,13 @@ function createRecentMonthCard(month) {
 
 function createAddMonthCard() {
     const addCol = document.createElement('div');
-    addCol.className = 'col-md-6 mb-3';
+    addCol.className = 'col-md-6';
 
     addCol.innerHTML = `
-        <div class="card border h-100 border-dashed hover-card" style="cursor: pointer; border: 2px dashed #dee2e6;" onclick="document.getElementById('add-month-btn').click()">
-            <div class="card-body d-flex flex-column justify-content-center align-items-center text-center h-100 p-4">
-                <i class="bi bi-plus-circle text-muted mb-3" style="font-size: 2.5rem;"></i>
-                <h6 class="text-muted mb-2">Add New Month</h6>
-                <p class="text-muted small mb-0">Track your progress</p>
-            </div>
+        <div class="month-mini-add" onclick="document.getElementById('add-month-btn').click()">
+            <i class="bi bi-plus-circle mb-2" style="font-size: 2rem;"></i>
+            <div class="fw-semibold">Add new month</div>
+            <small>Track your progress</small>
         </div>
     `;
 
@@ -600,30 +655,7 @@ function updateDateTime() {
 }
 
 function showError(message) {
-    // Create a simple toast for errors
-    const toastContainer = document.querySelector('.toast-container');
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.setAttribute('role', 'alert');
-    toast.innerHTML = `
-        <div class="toast-header">
-            <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
-            <strong class="me-auto">Error</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-        </div>
-        <div class="toast-body">
-            ${message}
-        </div>
-    `;
-
-    toastContainer.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast);
-    bsToast.show();
-
-    // Remove toast after it's hidden
-    toast.addEventListener('hidden.bs.toast', () => {
-        toast.remove();
-    });
+    showToast(message, 'error');
 }
 
 // Add hover effects for cards

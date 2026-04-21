@@ -191,7 +191,7 @@ function loadCurrentUserData() {
                     e.target.value = e.target.value.toLowerCase();
                 });
             } catch (error) {
-                // Silent error handling
+                console.warn("[non-critical failure]", error);
             }
         }
     });
@@ -294,7 +294,7 @@ function setupProfileForm() {
                         const oldPhotoRef = storageRef(storage, path);
                         await deleteObject(oldPhotoRef);
                     } catch (delError) {
-                        // Silent error handling
+                        console.warn("[non-critical failure]", error);
                     }
                 }
                 await updateProfile(user, { photoURL: tempUploadedPhotoURL });

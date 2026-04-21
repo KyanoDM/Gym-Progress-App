@@ -111,7 +111,7 @@ async function saveUserName(userNameInput, termsCheckBox, userNameError, termsEr
     } catch (error) {
         userNameError.textContent = "An error occurred. Please try again.";
         userNameError.style.display = "block";
-        // Silent error handling
+        console.warn("[non-critical failure]", error);
     }
 }
 
@@ -146,7 +146,7 @@ async function saveUnits() {
     } catch (error) {
         unitsError.textContent = "An error occurred. Please try again.";
         unitsError.style.display = "block";
-        // Silent error handling
+        console.warn("[non-critical failure]", error);
     }
 }
 

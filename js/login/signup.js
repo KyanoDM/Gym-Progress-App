@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 })
                 .catch(err => {
-                    // Silent error handling
+                    console.warn("[non-critical failure]", error);
                 });
 
         });

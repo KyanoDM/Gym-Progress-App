@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="css/Style.css">
     <script type="module" src="js/settings/settings.js"></script>
     <script type="module" src="js/navbar/navbar.js"></script>
+    <script type="module" src="js/utils/toast.js"></script>
+    <script type="module" src="js/utils/onboarding-alert.js"></script>
     <script src="js/utils/theme-logo.js"></script>
     <!-- Apply theme immediately to prevent flash -->
     <script>
@@ -94,7 +96,7 @@
             </div>
         </nav>
         <!-- Main Content -->
-        <div class="flex-grow-1" style="overflow-y: auto; height: 100vh;">
+        <div class="flex-grow-1 dash" style="overflow-y: auto; height: 100vh;">
             <!-- Onboarding Reminder -->
             <div class="alert alert-warning d-flex align-items-center justify-content-between p-3 mt-4 mx-auto hidden"
                 role="alert" id="onboarding-alert" style="max-width: 700px;">
@@ -108,8 +110,13 @@
                 <button class="btn btn-sm btn-primary ms-3">Complete</button>
             </div>
 
-            <div class="container mt-4">
-                <h3 class="mb-4">Settings</h3>
+            <div class="container dash-container py-4">
+                <header class="dash-hero-simple">
+                    <div>
+                        <h1>Settings</h1>
+                        <p class="dash-subtitle mb-0 text-muted">Manage your profile, preferences, and data.</p>
+                    </div>
+                </header>
                 <div class="row">
                     <!-- Settings Navigation -->
                     <nav class="col-md-4 col-lg-3 mb-4">
