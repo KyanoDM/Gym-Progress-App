@@ -18,11 +18,6 @@ body {
     color: rgb(32, 32, 235);
 }
 
-#search-input {
-    width: 100%;
-    box-sizing: border-box;
-}
-
 /* Base skeleton class */
 .skeleton {
     background: linear-gradient(90deg,
@@ -397,97 +392,6 @@ span:not(.skeleton) {
 .spinner-border-sm {
     width: 1rem;
     height: 1rem;
-}
-
-/* Feed card spacing */
-#feed-posts .card {
-    margin-bottom: 1rem;
-}
-
-/* Like button styling: remove underline and cursor */
-.like-button {
-    text-decoration: none !important;
-    cursor: pointer;
-}
-
-/* Fully red liked heart */
-.bi-heart.liked,
-.bi-heart-fill.liked {
-    color: #e0245e !important;
-    /* twitter-like red */
-}
-
-/* Feed post card width: make posts narrower and centered for better readability */
-#feed-posts .card {
-    width: 100%;
-    max-width: 760px;
-    /* desktop max width */
-    margin-left: auto;
-    margin-right: auto;
-}
-
-@media (max-width: 992px) {
-
-    /* Slightly smaller max width on tablets */
-    #feed-posts .card {
-        max-width: 640px;
-    }
-}
-
-@media (max-width: 576px) {
-
-    /* On small screens allow full width with small horizontal padding */
-    #feed-posts .card {
-        max-width: 100%;
-        margin-left: 0.5rem;
-        margin-right: 0.5rem;
-    }
-}
-
-/* Make the top create-post card match the feed post width/centering */
-.create-post-card {
-    width: 100%;
-    max-width: 760px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-@media (max-width: 992px) {
-    .create-post-card {
-        max-width: 640px;
-    }
-}
-
-@media (max-width: 576px) {
-    .create-post-card {
-        max-width: 100%;
-        margin-left: 0.5rem;
-        margin-right: 0.5rem;
-    }
-}
-
-/* Image loading skeleton used in feed posts */
-.feed-image-wrapper {
-    position: relative;
-    display: block;
-}
-
-.feed-image-wrapper .skeleton-image {
-    width: 100%;
-    min-height: 140px;
-    border-radius: 8px;
-}
-
-.feed-image-wrapper img.post-image {
-    display: block;
-    width: 100%;
-    height: auto;
-    opacity: 0;
-    transition: opacity 240ms ease-in;
-}
-
-.feed-image-wrapper img.post-image.loaded {
-    opacity: 1;
 }
 
 /* Toast notification styles */
@@ -998,23 +902,6 @@ body:not(.modal-open) .modal-backdrop {
     display: none !important;
 }
 
-/* Feed Post Creation Styles */
-.post-type-card {
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.post-type-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border-color: #007bff !important;
-}
-
-.post-type-card.selected {
-    border-color: #007bff !important;
-    background-color: rgba(0, 123, 255, 0.05);
-}
-
 .image-option {
     position: relative;
     display: inline-block;
@@ -1099,21 +986,6 @@ body:not(.modal-open) .modal-backdrop {
         padding-left: 1rem !important;
         padding-right: 1rem !important;
     }
-}
-
-/* Dark mode styles for feed */
-[data-bs-theme="dark"] .post-type-card {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-[data-bs-theme="dark"] .post-type-card:hover {
-    background-color: rgba(0, 123, 255, 0.1);
-    border-color: #007bff !important;
-}
-
-[data-bs-theme="dark"] #transformation-preview .card {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
 }
 
 /* Dark Mode Upload Progress Styles */
@@ -1728,47 +1600,3 @@ body:not(.modal-open) .modal-backdrop {
     margin-bottom: 1.5rem !important;
 }
 
-/* Profile latest post: make the preview taller and images larger */
-/* make latest post preview taller */
-/* latest post: smaller card but image fills most of it */
-#latest-post-container .card {
-    min-height: 520px;
-    /* compact card height */
-    display: flex;
-    flex-direction: column;
-}
-
-#latest-post-container .card .card-body {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-/* Make the image area grow so the image appears larger within a smaller card */
-#latest-post-container .card .feed-image-wrapper {
-    flex: 3 1 auto;
-    /* grow larger relative to text */
-    display: flex;
-}
-
-/* make the image take up most of the card body */
-#latest-post-container .card .feed-image-wrapper img,
-#latest-post-container .card img {
-    width: 100%;
-    height: 85%;
-    /* image occupies majority of card */
-    max-height: none;
-    object-fit: cover;
-    border-radius: 8px;
-}
-
-@media (max-width: 576px) {
-    #latest-post-container .card {
-        min-height: 420px;
-    }
-
-    #latest-post-container .card img {
-        max-height: none;
-    }
-}
