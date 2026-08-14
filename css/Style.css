@@ -1117,6 +1117,30 @@ body:not(.modal-open) .modal-backdrop {
     border: 1px solid #e9ecef;
 }
 
+/* The label + button-group pair needs to be able to shrink so the
+   button-group (not the label text) is what scrolls on narrow screens */
+#yearFilterContainer>.d-flex:first-child {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+#yearFilterContainer .text-muted.fw-bold {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+#yearFilterContainer .btn-group {
+    max-width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+#yearFilterContainer .btn-group::-webkit-scrollbar {
+    display: none;
+}
+
 #yearFilterContainer .btn-group {
     background-color: #e9ecef;
     border-radius: 25px;
