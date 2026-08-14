@@ -15,6 +15,7 @@
     <script type="module" src="js/utils/toast.js"></script>
     <script type="module" src="js/utils/onboarding-alert.js"></script>
     <script src="js/utils/theme-logo.js"></script>
+    <script src="js/utils/mobile-nav.js"></script>
     <!-- Apply theme immediately to prevent flash -->
     <script>
         (function () {
@@ -96,8 +97,20 @@
                 </div>
             </div>
         </nav>
+
+        <div class="sidebar-backdrop"></div>
+
         <!-- Main Content -->
         <div class="flex-grow-1 dash" style="overflow-y: auto; height: 100vh;">
+            <!-- Mobile top bar -->
+            <div class="mobile-topbar">
+                <button type="button" class="mobile-nav-toggle" id="sidebarToggle" aria-label="Open menu"
+                    aria-expanded="false">
+                    <i class="bi bi-list"></i>
+                </button>
+                <img src="Image/Logo_Big.png" alt="ProgressPal Logo" class="navbar-logo-small"
+                    data-light-logo="Image/Logo_Big.png" data-dark-logo="Image/Logo_Big_DarkMode.png">
+            </div>
             <!-- Onboarding Reminder -->
             <div class="alert alert-warning d-flex align-items-center justify-content-between p-3 mt-4 mx-auto hidden"
                 role="alert" id="onboarding-alert" style="max-width: 700px;">
