@@ -313,7 +313,7 @@ function switchChart(chartType) {
     currentChartType = chartType;
 
     // Update active button
-    const buttons = document.querySelectorAll('.btn-outline-primary');
+    const buttons = document.querySelectorAll('.seg-btn');
     buttons.forEach(btn => btn.classList.remove('active'));
 
     const activeButton = document.querySelector(`[onclick="switchChart('${chartType}')"]`);

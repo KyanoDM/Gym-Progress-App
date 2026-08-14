@@ -1,36 +1,46 @@
-// Off-canvas sidebar behavior for mobile screens
-document.addEventListener('DOMContentLoaded', () => {
-    const sideNav = document.getElementById('side-nav');
-    if (!sideNav) return;
-
-    const toggleBtns = document.querySelectorAll('.mobile-nav-toggle');
-    const backdrop = sideNav.querySelector('.sidebar-backdrop');
+// Off-canvas sidebar behavior for mobile screens.
+// Uses event delegation on document so it keeps working regardless of
+// script load order or timing quirks on mobile browsers.
+(function () {
+    function getSideNav() {
+        return document.getElementById('side-nav');
+    }
 
     function closeSidebar() {
+        const sideNav = getSideNav();
+        if (!sideNav) return;
         sideNav.classList.remove('sidebar-open');
-        toggleBtns.forEach(btn => btn.setAttribute('aria-expanded', 'false'));
+        document.querySelectorAll('.mobile-nav-toggle').forEach(btn => btn.setAttribute('aria-expanded', 'false'));
     }
 
     function openSidebar() {
+        const sideNav = getSideNav();
+        if (!sideNav) return;
         sideNav.classList.add('sidebar-open');
-        toggleBtns.forEach(btn => btn.setAttribute('aria-expanded', 'true'));
+        document.querySelectorAll('.mobile-nav-toggle').forEach(btn => btn.setAttribute('aria-expanded', 'true'));
     }
 
-    toggleBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
+    document.addEventListener('click', (event) => {
+        const sideNav = getSideNav();
+        if (!sideNav) return;
+
+        if (event.target.closest('.mobile-nav-toggle')) {
+            event.preventDefault();
             sideNav.classList.contains('sidebar-open') ? closeSidebar() : openSidebar();
-        });
-    });
+            return;
+        }
 
-    if (backdrop) {
-        backdrop.addEventListener('click', closeSidebar);
-    }
+        if (event.target.closest('.sidebar-backdrop')) {
+            closeSidebar();
+            return;
+        }
 
-    sideNav.querySelectorAll('nav .nav-link').forEach(link => {
-        link.addEventListener('click', closeSidebar);
+        if (event.target.closest('#side-nav > nav .nav-link')) {
+            closeSidebar();
+        }
     });
 
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 992) closeSidebar();
     });
-});
+})();

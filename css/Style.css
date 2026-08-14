@@ -184,6 +184,20 @@ span:not(.skeleton) {
     margin-bottom: 1.5rem;
 }
 
+@media (max-width: 767.98px) {
+    .months-row {
+        justify-content: center;
+    }
+
+    /* A single fixed 280px card left-aligned looked off-center with
+       empty space only on one side - go full width instead */
+    .months-col {
+        flex: 0 0 100%;
+        width: 100%;
+        max-width: 400px;
+    }
+}
+
 .month-card .card-header {
     border-bottom: none;
     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
@@ -761,8 +775,16 @@ span:not(.skeleton) {
         max-width: calc(100% - 1rem);
     }
 
+    /* Progress photos are usually portrait - a short cropped thumbnail
+       hides almost the whole photo, so go full-width and taller instead
+       of the 3-per-row desktop grid */
+    #imageGallery>div {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
     .gallery-image img {
-        height: 120px;
+        height: 340px;
     }
 
     .video-container iframe {
@@ -770,7 +792,7 @@ span:not(.skeleton) {
     }
 
     .video-thumbnail img {
-        height: 180px;
+        height: 220px;
     }
 }
 
@@ -2055,16 +2077,41 @@ body:not(.modal-open) .modal-backdrop {
 }
 
 @media (max-width: 991.98px) {
+    /* The 100vh + internal overflow-y:auto trick is unreliable on mobile
+       browsers (the address bar resizing the real viewport leaves content
+       clipped and unreachable) - let the page scroll normally instead */
+    body {
+        overflow-y: auto !important;
+        overflow-x: hidden;
+    }
+
+    #side-nav {
+        height: auto !important;
+    }
+
+    #side-nav>.flex-grow-1 {
+        height: auto !important;
+        overflow-y: visible !important;
+        overflow-x: hidden;
+    }
+
     .mobile-topbar {
-        display: flex;
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
         align-items: center;
-        gap: 0.75rem;
         position: sticky;
         top: 0;
         z-index: 1030;
         background: var(--bg-surface, #fff);
         border-bottom: 1px solid var(--border, #ececf1);
-        padding: 0.6rem 1rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .mobile-topbar .navbar-logo-small {
+        grid-column: 2;
+        justify-self: center;
+        width: auto;
+        height: 44px;
     }
 
     #side-nav>nav {
@@ -2072,6 +2119,7 @@ body:not(.modal-open) .modal-backdrop {
         top: 0;
         left: 0;
         height: 100vh;
+        height: 100dvh;
         width: 260px;
         z-index: 1050;
         transform: translateX(-100%);
@@ -2086,6 +2134,16 @@ body:not(.modal-open) .modal-backdrop {
     #side-nav.sidebar-open .sidebar-backdrop {
         display: block;
     }
+}
+
+.mobile-nav-toggle {
+    grid-column: 1;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
 }
 
 /* Stacked columns lose the divider that assumed a side-by-side layout
