@@ -2080,8 +2080,12 @@ body:not(.modal-open) .modal-backdrop {
     /* The 100vh + internal overflow-y:auto trick is unreliable on mobile
        browsers (the address bar resizing the real viewport leaves content
        clipped and unreachable) - let the page scroll normally instead */
+    /* No !important here: Bootstrap's own .modal-open{overflow:hidden}
+       (higher specificity via its class selector) must still be able to
+       lock background scroll while a modal is open, otherwise you get
+       both the page and the modal scrolling at once */
     body {
-        overflow-y: auto !important;
+        overflow-y: auto;
         overflow-x: hidden;
     }
 
