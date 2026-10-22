@@ -1,7 +1,7 @@
 import { app } from "../firebase/config.js";
 import {
     getAuth, GoogleAuthProvider, signInWithPopup,
-    onAuthStateChanged, signOut, signInWithEmailAndPassword
+    onAuthStateChanged, signOut, signInWithEmailAndPassword, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     window.location.href = "index.html";
                 })
                 .catch(err => {
-                    console.warn("[non-critical failure]", error);
+                    console.warn("[non-critical failure]", err);
                 });
         });
     }
@@ -91,5 +91,44 @@ if (emailForm) {
     });
 }
 
+const forgotPasswordLink = document.querySelector("#forgot-password-link");
+const loginInfo = document.querySelector("#login-info");
+
+if (forgotPasswordLink) {
+    forgotPasswordLink.addEventListener("click", async (e) => {
+        e.preventDefault();
+        loginError.style.display = "none";
+        loginInfo.style.display = "none";
+
+        const email = emailInput.value.trim();
+        if (!email) {
+            loginError.textContent = "Enter your email address above first, then click 'Forgot your password?'";
+            loginError.style.display = "block";
+            emailInput.focus();
+            return;
+        }
+
+        try {
+            await sendPasswordResetEmail(auth, email);
+        } catch (err) {
+            if (err.code === "auth/invalid-email") {
+                loginError.textContent = "That doesn't look like a valid email address.";
+                loginError.style.display = "block";
+                return;
+            }
+            if (err.code === "auth/too-many-requests") {
+                loginError.textContent = "Too many attempts. Please try again later.";
+                loginError.style.display = "block";
+                return;
+            }
+            // Any other error (including user-not-found) gets the same neutral
+            // message below so the form doesn't reveal which emails have accounts.
+            console.warn("[non-critical failure]", err);
+        }
+
+        loginInfo.textContent = "If an account exists for that email, we've sent a password reset link. Check your inbox (and spam folder).";
+        loginInfo.style.display = "block";
+    });
+}
 
 export { auth, db };
