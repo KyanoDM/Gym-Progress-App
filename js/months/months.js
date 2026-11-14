@@ -54,8 +54,8 @@ function validateMonthFormInputs({ monthSelect, yearInput, weightInput, gymVisit
         throw new Error('Description must be 100 characters or fewer.');
     }
 
-    if (notesInput && notesInput.value.length > 500) {
-        throw new Error('Notes must be 500 characters or fewer.');
+    if (notesInput && notesInput.value.length > 750) {
+        throw new Error('Notes must be 750 characters or fewer.');
     }
 
     const videoUrl = videoUrlInput?.value?.trim();
