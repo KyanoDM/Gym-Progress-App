@@ -18,7 +18,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 let weightChart = null;
-let currentChartType = 'weight';
 let userMonthsData = [];
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -225,41 +224,6 @@ function updateStats(months) {
         }
     }
 
-    // Streak (consecutive months ending at the most recent tracked month)
-    const streakEl = document.getElementById('streak-count');
-    if (streakEl) {
-        streakEl.textContent = computeStreak(months).toString();
-    }
-}
-
-function computeStreak(months) {
-    if (!months.length) return 0;
-    const monthOrder = {
-        january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
-        july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
-    };
-    const ordered = [...months]
-        .map(m => ({ y: m.year, m: monthOrder[m.month?.toLowerCase()] ?? -1 }))
-        .filter(m => m.m >= 0)
-        .sort((a, b) => (b.y - a.y) || (b.m - a.m));
-    if (!ordered.length) return 0;
-
-    let streak = 1;
-    let prev = ordered[0];
-    for (let i = 1; i < ordered.length; i++) {
-        const cur = ordered[i];
-        // Expect cur to be exactly one month before prev
-        let expectedY = prev.y;
-        let expectedM = prev.m - 1;
-        if (expectedM < 0) { expectedM = 11; expectedY -= 1; }
-        if (cur.y === expectedY && cur.m === expectedM) {
-            streak += 1;
-            prev = cur;
-        } else {
-            break;
-        }
-    }
-    return streak;
 }
 
 function calculateWeightChange(months, weightChangeEl) {
@@ -299,186 +263,96 @@ function calculateWeightChange(months, weightChangeEl) {
 }
 
 function updateWeightChart(months) {
-    // Use the new chart switching function with default weight chart
-    updateChartWithType(months, currentChartType || 'weight');
+    userMonthsData = months;
+    renderChart(months);
 }
 
-// Chart switching functionality
-function switchChart(chartType) {
-    if (!userMonthsData || userMonthsData.length === 0) {
-        console.warn("No data available for chart switching");
-        return;
-    }
+// Re-render when the theme changes so colors stay readable
+new MutationObserver(() => { if (userMonthsData.length) renderChart(userMonthsData); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 
-    currentChartType = chartType;
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    // Update active button
-    const buttons = document.querySelectorAll('.seg-btn');
-    buttons.forEach(btn => btn.classList.remove('active'));
-
-    const activeButton = document.querySelector(`[onclick="switchChart('${chartType}')"]`);
-    if (activeButton) {
-        activeButton.classList.add('active');
-    }
-
-    // Update chart title
-    const chartTitle = document.getElementById('chart-title');
-    if (chartTitle) {
-        switch (chartType) {
-            case 'weight':
-                chartTitle.textContent = 'Weight Progress';
-                break;
-            case 'visits':
-                chartTitle.textContent = 'Gym Visits Progress';
-                break;
-            case 'rating':
-                chartTitle.textContent = 'Monthly Ratings Progress';
-                break;
-        }
-    }
-
-    // Update chart with new data
-    updateChartWithType(userMonthsData, chartType);
-}
-
-// Make switchChart available globally for onclick handlers
-window.switchChart = switchChart;
-
-// Updated chart function to handle different data types
-function updateChartWithType(months, chartType = 'weight') {
+// Weight (line, left axis) and gym visits (bars, right axis) over the last 12 months
+function renderChart(months) {
     const ctx = document.getElementById('weightChart');
     const skeleton = document.getElementById('chart-skeleton');
+    if (!ctx || !skeleton || typeof Chart === 'undefined') return;
 
-    if (!ctx || !skeleton) {
-        console.warn('Chart elements not found');
-        return;
-    }
-
-    const canvasContext = ctx.getContext('2d');
-
-    // Get months with data for the selected chart type
-    let monthsWithData;
-    switch (chartType) {
-        case 'weight':
-            monthsWithData = months.filter(month => month.weight);
-            break;
-        case 'visits':
-            monthsWithData = months.filter(month => month.gymVisits !== undefined);
-            break;
-        case 'rating':
-            monthsWithData = months.filter(month => month.rating);
-            break;
-        default:
-            monthsWithData = months.filter(month => month.weight);
-    }
-
-    monthsWithData = monthsWithData.slice(0, 6).reverse(); // Last 6 months, chronological order
-
-    if (monthsWithData.length === 0) {
-        // Hide skeleton and show no data message
-        skeleton.style.display = 'none';
-        ctx.style.display = 'block';
-
-        if (weightChart) {
-            weightChart.destroy();
-        }
-
-        // Show "No data" text on canvas
-        canvasContext.font = '16px Arial';
-        canvasContext.fillStyle = '#6c757d';
-        canvasContext.textAlign = 'center';
-        canvasContext.fillText(`No ${chartType} data available`, ctx.width / 2, ctx.height / 2);
-        return;
-    }
-
-    // Prepare chart data
-    const labels = monthsWithData.map(month => {
-        const monthName = month.month.charAt(0).toUpperCase() + month.month.slice(1);
-        return `${monthName} ${month.year}`;
-    });
-
-    let data, label, borderColor, backgroundColor;
-
-    switch (chartType) {
-        case 'weight':
-            data = monthsWithData.map(month => month.weight);
-            label = 'Weight (kg)';
-            borderColor = '#8b5cf6';
-            backgroundColor = 'rgba(139, 92, 246, 0.1)';
-            break;
-        case 'visits':
-            data = monthsWithData.map(month => month.gymVisits || 0);
-            label = 'Gym Visits';
-            borderColor = '#10b981';
-            backgroundColor = 'rgba(16, 185, 129, 0.1)';
-            break;
-        case 'rating':
-            data = monthsWithData.map(month => month.rating);
-            label = 'Rating (1-10)';
-            borderColor = '#ef4444';
-            backgroundColor = 'rgba(239, 68, 68, 0.1)';
-            break;
-    }
-
-    // Hide skeleton and show chart
+    const monthOrder = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+    const recent = months.slice(0, 12).reverse();
     skeleton.style.display = 'none';
-    ctx.style.display = 'block';
+    if (weightChart) weightChart.destroy();
 
-    // Destroy existing chart
-    if (weightChart) {
-        weightChart.destroy();
+    const panelBody = ctx.parentElement;
+    panelBody.querySelector('.chart-empty')?.remove();
+    if (!recent.length) {
+        panelBody.insertAdjacentHTML('beforeend', '<div class="chart-empty">No data yet. Add a month to see your progress.</div>');
+        return;
     }
 
-    // Create new chart
-    weightChart = new Chart(canvasContext, {
-        type: 'line',
+    const dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const text = dark ? '#9ca3af' : '#6b7280';
+    const grid = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
+    const labels = recent.map(m => {
+        const i = monthOrder.indexOf((m.month || '').toLowerCase());
+        return i >= 0 ? SHORT_MONTHS[i] + " '" + String(m.year).slice(-2) : '';
+    });
+    const weights = recent.map(m => m.weight || null);
+    const visits = recent.map(m => (typeof m.gymVisits === 'number' ? m.gymVisits : null));
+
+    weightChart = new Chart(ctx.getContext('2d'), {
         data: {
-            labels: labels,
-            datasets: [{
-                label: label,
-                data: data,
-                borderColor: borderColor,
-                backgroundColor: backgroundColor,
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: borderColor,
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointRadius: 6,
-                pointHoverRadius: 8
-            }]
+            labels,
+            datasets: [
+                {
+                    type: 'bar',
+                    label: 'Visits',
+                    data: visits,
+                    yAxisID: 'yVisits',
+                    backgroundColor: dark ? 'rgba(16,185,129,0.45)' : 'rgba(16,185,129,0.35)',
+                    borderRadius: 6,
+                    maxBarThickness: 28,
+                    order: 2
+                },
+                {
+                    type: 'line',
+                    label: 'Weight (kg)',
+                    data: weights,
+                    yAxisID: 'yWeight',
+                    borderColor: '#8b5cf6',
+                    backgroundColor: '#8b5cf6',
+                    borderWidth: 3,
+                    tension: 0.3,
+                    spanGaps: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBorderColor: dark ? '#1f2937' : '#fff',
+                    pointBorderWidth: 2,
+                    order: 1
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: false } },
             scales: {
-                y: {
-                    beginAtZero: chartType === 'visits' || chartType === 'rating',
-                    grid: {
-                        color: 'rgba(0,0,0,0.1)'
-                    },
-                    ticks: {
-                        color: '#6c757d'
-                    }
+                x: { grid: { display: false }, ticks: { color: text, maxRotation: 0, autoSkip: true } },
+                yWeight: {
+                    position: 'left',
+                    grid: { color: grid },
+                    ticks: { color: '#8b5cf6' },
+                    grace: '10%'
                 },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        color: '#6c757d'
-                    }
+                yVisits: {
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { display: false },
+                    ticks: { color: text, precision: 0 },
+                    suggestedMax: 31
                 }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
             }
         }
     });

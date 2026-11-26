@@ -504,7 +504,6 @@ function createMonthCard(month) {
                      onload="handleImageLoad(this)">
                 <div class="month-card-actions">
                     <button type="button" class="edit-month" title="Edit" aria-label="Edit month"><i class="bi bi-pencil"></i></button>
-                    <button type="button" class="delete-month" title="Delete" aria-label="Delete month"><i class="bi bi-trash"></i></button>
                 </div>
                 <div class="month-card-overlay">
                     <div class="month-card-title">${monthName} <span>${year}</span></div>
@@ -1374,7 +1373,7 @@ function setupViewModalActions(month) {
 
     // Delete button
     const deleteBtn = document.getElementById('viewModalDeleteBtn');
-    deleteBtn.onclick = async () => {
+    if (deleteBtn) deleteBtn.onclick = async () => {
         // Close view modal and wait for it to fully close
         const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewMonthModal'));
         const modalElement = document.getElementById('viewMonthModal');
