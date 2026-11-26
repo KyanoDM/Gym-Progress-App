@@ -218,7 +218,8 @@ async function loadUserMonths(userId) {
         updateSidebarMonthsCount(months.length);
 
         // Sync months count in database (in case there's a mismatch)
-        await syncMonthsCount(userId, months.length);
+        // Fire and forget: not needed for rendering
+        syncMonthsCount(userId, months.length);
 
         // Set up toggle functionality after cards are created
         setupDetailsToggle();
@@ -622,6 +623,34 @@ async function decrementMonthsCount(userId) {
         });
     } catch (error) {
         console.warn("[non-critical failure]", error);
+    }
+}
+
+// Downscale large photos before upload so cards load fast.
+// Falls back to the original file if the browser can't decode it.
+async function compressImage(file, maxSize = 1600, quality = 0.82) {
+    if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
+    try {
+        const bitmap = await createImageBitmap(file);
+        const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+        if (scale === 1 && file.size < 400 * 1024) {
+            bitmap.close();
+            return file;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(bitmap.width * scale);
+        canvas.height = Math.round(bitmap.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        bitmap.close();
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+        if (!blob || blob.size >= file.size) return file;
+        const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+        return new File([blob], name, { type: 'image/jpeg' });
+    } catch {
+        return file;
     }
 }
 
@@ -2416,7 +2445,7 @@ async function uploadImagesWithProgress(files, userId, month, year) {
     const totalFiles = files.length;
 
     for (let i = 0; i < totalFiles; i++) {
-        const file = files[i];
+        const file = await compressImage(files[i]);
         const fileName = `${userId}_${month}_${year}_img_${i}_${Date.now()}.${file.name.split('.').pop()}`;
         const imageRef = storageRef(storage, `month_images/${userId}/${fileName}`);
 
@@ -2425,7 +2454,9 @@ async function uploadImagesWithProgress(files, userId, month, year) {
             const baseProgress = 10 + (i / totalFiles) * 40; // Images take 40% of total progress
             updateProgress(baseProgress, `<div class="progress-step"><i class="bi bi-image me-1"></i>Uploading image ${i + 1} of ${totalFiles}: ${file.name}</div>`);
 
-            const snapshot = await uploadBytes(imageRef, file);
+            const snapshot = await uploadBytes(imageRef, file, {
+                cacheControl: 'public,max-age=31536000'
+            });
             const downloadURL = await getDownloadURL(snapshot.ref);
             imageUrls.push(downloadURL);
 
