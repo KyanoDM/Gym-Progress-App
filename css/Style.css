@@ -2544,3 +2544,9 @@ body:not(.modal-open) .modal-backdrop {
 }
 .dash-greeting { line-height: 1.25; height: 2.2rem; min-height: 0; }
 .dash-greeting #user-name.skeleton { height: 1.4rem !important; vertical-align: middle; }
+
+/* Reserve the icon's width so text doesn't shift when the icon font finishes loading */
+.bi::before, [class^="bi-"]::before, [class*=" bi-"]::before {
+    width: 1em;
+    text-align: center;
+}
