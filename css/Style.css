@@ -1079,10 +1079,6 @@ span:not(.skeleton) {
 
 /* Dark Mode Modal Styling */
 
-[data-bs-theme="dark"] #viewNotes {
-    color: #000 !important;
-}
-
 /* Fix modal backdrop issues */
 [data-bs-theme="dark"] .modal-backdrop {
     background-color: rgba(0, 0, 0, 0.5) !important;
@@ -2696,3 +2692,20 @@ body:not(.modal-open) .modal-backdrop {
 
 .modal .btn-primary { background-color: #8b5cf6; border-color: #8b5cf6; }
 .modal .btn-primary:hover, .modal .btn-primary:focus { background-color: #7c3aed; border-color: #7c3aed; }
+
+/* Photos are portrait: show them uncropped at their natural ratio, two per row */
+.view-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.view-gallery > *:first-child { grid-column: auto; }
+.view-gallery .gallery-image,
+.view-gallery > *:first-child .gallery-image { aspect-ratio: auto; }
+.view-gallery .gallery-image img { height: auto; object-fit: contain; }
+.view-gallery .gallery-image:hover img { transform: none; }
+.view-gallery .gallery-image > .skeleton { aspect-ratio: 3 / 4; height: auto !important; }
+
+/* Readable text in the detail panel in both themes */
+#viewDescription, #viewNotes { color: var(--bs-body-color) !important; }
+#viewDescription.skeleton, #viewNotes.skeleton { color: transparent !important; }
+
+@media (max-width: 575.98px) {
+    .view-gallery { grid-template-columns: 1fr; }
+}
