@@ -13,7 +13,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 function goToOnboarding() {
-    window.location.href = "onboarding.html";
+    window.location.href = "onboarding";
 }
 
 function initOnboardingAlert() {

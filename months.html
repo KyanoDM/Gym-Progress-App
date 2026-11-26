@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+    <script>if(/\.html$/.test(location.pathname))history.replaceState(null,'',location.pathname.replace(/(index)?\.html$/,'')+location.search+location.hash);</script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ProgressPal</title>
@@ -11,8 +12,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" defer></script>
-    <link rel="stylesheet" href="css/Style.css?v=9">
-    <script type="module" src="js/months/months.js?v=9"></script>
+    <link rel="stylesheet" href="css/Style.css?v=12">
+    <script type="module" src="js/months/months.js?v=12"></script>
     <script type="module" src="js/navbar/navbar.js"></script>
     <script src="js/utils/theme-logo.js"></script>
     <script src="js/utils/mobile-nav.js"></script>
@@ -73,7 +74,7 @@
                 </div>
                 <ul class="nav flex-column px-3">
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="index.html">
+                        <a class="nav-link" href="./">
                             <i class="bi bi-speedometer2 me-2"></i>Dashboard
                         </a>
                     </li>
@@ -83,7 +84,7 @@
                         </a>
                     </li>
                     <li class="nav-item mb-2">
-                        <a class="nav-link" href="settings.html">
+                        <a class="nav-link" href="settings">
                             <i class="bi bi-gear me-2"></i>Settings
                         </a>
                     </li>
@@ -142,25 +143,19 @@
                         <h1 class="dash-greeting mb-1">Your months</h1>
                         <p class="dash-subtitle mb-0">Browse, edit, and track every month of progress.</p>
                     </div>
-                    <div class="dash-actions">
+                    <div class="dash-actions months-actions">
+                        <div id="yearFilterContainer" style="display: none;">
+                            <div class="btn-group" role="group" aria-label="Year filter">
+                                <input type="radio" class="btn-check" name="yearFilter" id="yearAll" value="all" checked>
+                                <label class="btn btn-outline-primary btn-sm" for="yearAll">All</label>
+                            </div>
+                        </div>
                         <button class="btn btn-action btn-action-accent" id="hero-add-month"
                             onclick="document.querySelector('.month-card-add')?.click()">
                             <i class="bi bi-plus-lg me-2"></i>Add month
                         </button>
                     </div>
                 </header>
-
-                <!-- Year Filter -->
-                <div class="flex-wrap align-items-center justify-content-between gap-2 mb-3"
-                    id="yearFilterContainer" style="display: none;">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="text-muted fw-bold me-2">Filter by year:</span>
-                        <div class="btn-group" role="group" aria-label="Year filter">
-                            <input type="radio" class="btn-check" name="yearFilter" id="yearAll" value="all" checked>
-                            <label class="btn btn-outline-primary btn-sm" for="yearAll">All</label>
-                        </div>
-                    </div>
-                </div>
 
                 <div class="months-row">
                     <div class="months-col"><div class="card h-100 month-card skeleton-card"><div class="month-card-media"><div class="skeleton image-skeleton"></div></div><div class="month-card-body"><div class="skeleton skeleton-text mb-2" style="width: 100%; height: 14px;"></div><div class="skeleton skeleton-text" style="width: 60%; height: 14px;"></div></div></div></div><div class="months-col"><div class="card h-100 month-card skeleton-card"><div class="month-card-media"><div class="skeleton image-skeleton"></div></div><div class="month-card-body"><div class="skeleton skeleton-text mb-2" style="width: 100%; height: 14px;"></div><div class="skeleton skeleton-text" style="width: 60%; height: 14px;"></div></div></div></div><div class="months-col"><div class="card h-100 month-card skeleton-card"><div class="month-card-media"><div class="skeleton image-skeleton"></div></div><div class="month-card-body"><div class="skeleton skeleton-text mb-2" style="width: 100%; height: 14px;"></div><div class="skeleton skeleton-text" style="width: 60%; height: 14px;"></div></div></div></div><div class="months-col"><div class="card h-100 month-card skeleton-card"><div class="month-card-media"><div class="skeleton image-skeleton"></div></div><div class="month-card-body"><div class="skeleton skeleton-text mb-2" style="width: 100%; height: 14px;"></div><div class="skeleton skeleton-text" style="width: 60%; height: 14px;"></div></div></div></div>

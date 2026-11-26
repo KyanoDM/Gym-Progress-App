@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         lastLogin: new Date()
                     }, { merge: true });
 
-                    window.location.href = "index.html";
+                    window.location.href = "./";
                 })
                 .catch(err => {
                     console.warn("[non-critical failure]", err);
@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
-            signOut(auth).then(() => window.location.href = "login.html");
+            signOut(auth).then(() => window.location.href = "login");
         });
     }
 
@@ -80,7 +80,7 @@ if (emailForm) {
                 lastLogin: new Date()
             }, { merge: true });
 
-            window.location.href = "index.html"; // Redirect on success
+            window.location.href = "./"; // Redirect on success
         } catch (err) {
             if (err.message == "Firebase: Error (auth/invalid-credential).") {
                 err.message = "Wrong Credentials";

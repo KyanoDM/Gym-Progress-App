@@ -17,6 +17,15 @@ import {
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Keep skeletons visible for a minimum time so fast loads don't flash
+const pageStart = performance.now();
+const MIN_SKELETON_MS = 450;
+function waitForMinSkeleton() {
+    const remaining = MIN_SKELETON_MS - (performance.now() - pageStart);
+    return remaining > 0 ? new Promise(r => setTimeout(r, remaining)) : Promise.resolve();
+}
+
+
 let weightChart = null;
 let userMonthsData = [];
 
@@ -27,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function Initialize() {
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
-            window.location.href = "login.html";
+            window.location.href = "login";
             return;
         }
 
@@ -63,6 +72,8 @@ async function loadDashboardData(userId) {
         querySnapshot.forEach((doc) => {
             months.push({ id: doc.id, ...doc.data() });
         });
+
+        await waitForMinSkeleton();
 
         // Sort months properly by date
         months.sort((a, b) => {
@@ -379,7 +390,7 @@ function createRecentMonthCard(month) {
     }
 
     monthCol.innerHTML = `
-        <div class="month-mini" onclick="window.location.href='months.html'">
+        <div class="month-mini" onclick="window.location.href='months'">
             <img src="${coverImage}" class="month-mini-img" alt="${monthName} ${year}"
                  onerror="this.src='Image/user.png';">
             <div class="month-mini-body">
@@ -451,6 +462,8 @@ function checkCurrentMonthStatus(months) {
     if (!currentMonthExists) {
         // Show the button and update text
         fillCurrentMonthBtn.style.display = 'flex';
+        const addBtnEl = document.getElementById('add-month-btn');
+        if (addBtnEl) addBtnEl.style.display = 'none';
         fillCurrentMonthBtn.style.visibility = 'visible';
         fillCurrentMonthBtn.classList.remove('d-none');
         const monthName = currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1);
@@ -471,7 +484,7 @@ function setupQuickActions() {
 
     addMonthBtn.addEventListener('click', () => {
         // Redirect to months page with a URL parameter to open the modal
-        window.location.href = 'months.html?action=add';
+        window.location.href = 'months?action=add';
     });
 
     if (fillCurrentMonthBtn) {
@@ -480,7 +493,7 @@ function setupQuickActions() {
             const now = new Date();
             const currentMonth = now.toLocaleDateString('en-US', { month: 'long' }).toLowerCase();
             const currentYear = now.getFullYear();
-            window.location.href = `months.html?action=add&month=${currentMonth}&year=${currentYear}`;
+            window.location.href = `months?action=add&month=${currentMonth}&year=${currentYear}`;
         });
     }
 }

@@ -71,6 +71,15 @@ function validateMonthFormInputs({ monthSelect, yearInput, weightInput, gymVisit
 
 const db = getFirestore(app);
 
+// Keep skeletons visible for a minimum time so fast loads don't flash
+const pageStart = performance.now();
+const MIN_SKELETON_MS = 450;
+function waitForMinSkeleton() {
+    const remaining = MIN_SKELETON_MS - (performance.now() - pageStart);
+    return remaining > 0 ? new Promise(r => setTimeout(r, remaining)) : Promise.resolve();
+}
+
+
 // Global variables for year filtering
 let allMonths = [];
 let currentSelectedYear = 'all';
@@ -109,7 +118,7 @@ function setupModalBackdropCleanup() {
 function Initialize() {
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
-            window.location.href = "login.html";
+            window.location.href = "login";
             return;
         }
 
@@ -195,6 +204,8 @@ async function loadUserMonths(userId) {
             const bMonth = monthOrder[b.month?.toLowerCase()] || 0;
             return bMonth - aMonth;
         });
+
+        await waitForMinSkeleton();
 
         // Store all months globally for filtering
         allMonths = months;
@@ -376,6 +387,7 @@ function displayFilteredMonths() {
 
     // Always show the "Add Month" card first
     const addMonthCard = createAddMonthCard();
+    addMonthCard.style.setProperty('--i', 0);
     monthsContainer.appendChild(addMonthCard);
 
     // Filter months based on selected year
@@ -385,8 +397,9 @@ function displayFilteredMonths() {
     }
 
     // Display filtered months
-    filteredMonths.forEach(month => {
+    filteredMonths.forEach((month, index) => {
         const monthCard = createMonthCard(month);
+        monthCard.style.setProperty('--i', index + 1);
         monthsContainer.appendChild(monthCard);
         setupMonthCardEvents(monthCard, month);
     });
@@ -453,14 +466,14 @@ function createMonthCard(month) {
                         ${month.videoUrl ? `<span class="month-card-chip"><i class="bi bi-play-circle-fill"></i></span>` : ''}
                         ${imageCount ? `<span class="month-card-chip"><i class="bi bi-images me-1"></i>${imageCount}</span>` : ''}
                     </div>
+                    ${(month.weight || month.gymVisits) ? `<div class="month-card-stats">
+                        ${month.weight ? `<span><i class="bi bi-speedometer2"></i>${month.weight} kg</span>` : ''}
+                        ${month.gymVisits ? `<span><i class="bi bi-calendar-check"></i>${month.gymVisits} visits</span>` : ''}
+                    </div>` : ''}
                 </div>
             </div>
             <div class="month-card-body">
                 <p class="month-card-desc">${month.description || 'No description available.'}</p>
-                ${(month.weight || month.gymVisits) ? `<div class="month-card-stats">
-                    ${month.weight ? `<span><i class="bi bi-speedometer2"></i>${month.weight} kg</span>` : ''}
-                    ${month.gymVisits ? `<span><i class="bi bi-calendar-check"></i>${month.gymVisits} visits</span>` : ''}
-                </div>` : ''}
             </div>
         </div>
     `;

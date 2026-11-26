@@ -76,9 +76,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     const userData = updatedSnap.data();
 
                     if (userData?.onboarding?.onboardingComplete) {
-                        window.location.href = "index.html";
+                        window.location.href = "./";
                     } else {
-                        window.location.href = "onboarding.html";
+                        window.location.href = "onboarding";
                     }
                 })
                 .catch(err => {
@@ -133,9 +133,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const userSnap = await getDoc(userRef);
             const userData = userSnap.data();
             if (userData && userData.onboardingComplete) {
-                window.location.href = "index.html";
+                window.location.href = "./";
             } else {
-                window.location.href = "onboarding.html";
+                window.location.href = "onboarding";
             }
         } catch (err) {
             signupError.textContent = err.message;

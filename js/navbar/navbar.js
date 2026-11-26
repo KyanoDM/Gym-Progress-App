@@ -19,14 +19,14 @@ function setupNavigation() {
 
     if (settingsBtn) {
         settingsBtn.addEventListener("click", () => {
-            window.location.href = "settings.html";
+            window.location.href = "settings";
         });
     }
 
     if (sidebarLogoutBtn) {
         sidebarLogoutBtn.addEventListener("click", () => {
             signOut(auth)
-                .then(() => window.location.href = "login.html")
+                .then(() => window.location.href = "login")
                 .catch(() => { });
         });
     }
