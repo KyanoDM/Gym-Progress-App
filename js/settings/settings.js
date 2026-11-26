@@ -435,7 +435,7 @@ function setupThemeForm() {
     themeForm.querySelector("button[type='submit']").insertAdjacentElement("afterend", themeMsg);
 
     // Load current theme from localStorage
-    const currentTheme = localStorage.getItem('theme') || 'light';
+    const currentTheme = localStorage.getItem('theme') || 'dark';
     const themeRadio = document.querySelector(`input[name="theme"][value="${currentTheme}"]`);
     if (themeRadio) {
         themeRadio.checked = true;

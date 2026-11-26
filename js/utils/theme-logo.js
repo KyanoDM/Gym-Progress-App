@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', updateLogosForTheme);
 
 // Update logos when theme changes (for auto theme)
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('theme') || 'dark';
     if (savedTheme === 'auto') {
         // Theme might have changed, update logos
         setTimeout(updateLogosForTheme, 100);

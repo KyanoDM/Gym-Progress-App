@@ -257,35 +257,11 @@ function createSkeletonCard() {
     monthCol.className = 'months-col skeleton-card';
 
     monthCol.innerHTML = `
-        <div class="card h-100 shadow-sm month-card">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-calendar3 me-2"></i>
-                    <span class="skeleton skeleton-text d-inline-block" style="width: 120px; height: 20px; background: rgba(255,255,255,0.3);"></span>
-                </h6>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="skeleton skeleton-circle" style="width: 24px; height: 24px; background: rgba(255,255,255,0.3);"></div>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="position-relative">
-                    <div class="skeleton" style="height: 320px;"></div>
-                </div>
-                <div class="p-3">
-                    <div class="skeleton skeleton-text mb-2" style="width: 100%; height: 16px;"></div>
-                    <div class="skeleton skeleton-text mb-2" style="width: 80%; height: 16px;"></div>
-                    <div class="d-flex flex-wrap gap-2 mb-2">
-                        <div class="skeleton skeleton-text" style="width: 60px; height: 20px; border-radius: 12px;"></div>
-                        <div class="skeleton skeleton-text" style="width: 80px; height: 20px; border-radius: 12px;"></div>
-                        <div class="skeleton skeleton-text" style="width: 50px; height: 20px; border-radius: 12px;"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="card-footer bg-light">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="skeleton skeleton-text" style="width: 60px; height: 32px; border-radius: 4px;"></div>
-                    <div class="skeleton skeleton-text" style="width: 80px; height: 16px;"></div>
-                </div>
+        <div class="card h-100 month-card">
+            <div class="month-card-media"><div class="skeleton image-skeleton"></div></div>
+            <div class="month-card-body">
+                <div class="skeleton skeleton-text mb-2" style="width: 100%; height: 14px;"></div>
+                <div class="skeleton skeleton-text" style="width: 70%; height: 14px;"></div>
             </div>
         </div>
     `;
@@ -518,57 +494,32 @@ function createMonthCard(month) {
     // Always start with details hidden - they'll be shown by setupDetailsToggle if needed
     const detailsDisplay = 'none';
 
+    const imageCount = month.imageUrls ? (month.imageUrls.length || Object.keys(month.imageUrls).length) : 0;
     monthCol.innerHTML = `
-        <div class="card h-100 shadow-sm month-card">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="bi bi-calendar3 me-2"></i>${monthName} ${year}
-                </h6>
-                <div class="d-flex align-items-center gap-2">
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-three-dots"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item view-month" href="#" data-month-id="${month.id}">
-                                <i class="bi bi-eye me-2"></i>View
-                            </a></li>
-                            <li><a class="dropdown-item edit-month" href="#" data-month-id="${month.id}">
-                                <i class="bi bi-pencil me-2"></i>Edit
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger delete-month" href="#" data-month-id="${month.id}">
-                                <i class="bi bi-trash me-2"></i>Delete
-                            </a></li>
-                        </ul>
-                    </div>
+        <div class="card h-100 month-card view-month" role="button" tabindex="0" data-month-id="${month.id}">
+            <div class="month-card-media">
+                <div class="image-skeleton skeleton"></div>
+                <img src="${coverImage}" alt="${monthName} Progress" loading="lazy"
+                     onerror="this.src='Image/user.png'"
+                     onload="handleImageLoad(this)">
+                <div class="month-card-actions">
+                    <button type="button" class="edit-month" title="Edit" aria-label="Edit month"><i class="bi bi-pencil"></i></button>
+                    <button type="button" class="delete-month" title="Delete" aria-label="Delete month"><i class="bi bi-trash"></i></button>
                 </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="position-relative">
-                    <div class="image-skeleton skeleton" style="height: 320px; display: block;"></div>                    <img src="${coverImage}" class="card-img-top" alt="${monthName} Progress" 
-                         style="height: 320px; object-fit: cover; display: none;" 
-                         onerror="this.src='Image/user.png'"
-                         onload="handleImageLoad(this)">
-                </div>
-                <div class="p-3">
-                    <p class="card-text small mb-2">
-                        ${month.description || 'No description available.'}
-                    </p>
-                    <div class="d-flex flex-wrap gap-2 mb-2 month-details d-none">
-                        ${month.weight ? `<span class="badge bg-secondary"><i class="bi bi-speedometer2 me-1"></i>${month.weight} kg</span>` : ''}
-                        ${month.gymVisits ? `<span class="badge bg-info"><i class="bi bi-calendar-check me-1"></i>${month.gymVisits} visits</span>` : ''}
+                <div class="month-card-overlay">
+                    <div class="month-card-title">${monthName} <span>${year}</span></div>
+                    <div class="month-card-meta">
                         <span class="badge ${ratingBadgeClass}"><i class="bi bi-star-fill me-1"></i>${rating}/10</span>
+                        ${month.videoUrl ? `<span class="month-card-chip"><i class="bi bi-play-circle-fill"></i></span>` : ''}
+                        ${imageCount ? `<span class="month-card-chip"><i class="bi bi-images me-1"></i>${imageCount}</span>` : ''}
                     </div>
                 </div>
             </div>
-            <div class="card-footer bg-light">
-                <div class="d-flex justify-content-between align-items-center">
-                    <button class="btn btn-sm btn-outline-primary view-month" data-month-id="${month.id}">
-                        <i class="bi bi-arrow-right me-1"></i>View
-                    </button>
-                    ${month.videoUrl ? `<small class="text-muted"><i class="bi bi-play-circle me-1"></i>Has video</small>` : ''}
-                    ${month.imageUrls ? `<small class="text-muted"><i class="bi bi-images me-1"></i>${month.imageUrls.length} images</small>` : ''}
+            <div class="month-card-body">
+                <p class="month-card-desc">${month.description || 'No description available.'}</p>
+                <div class="d-flex flex-wrap gap-2 mt-2 month-details d-none">
+                    ${month.weight ? `<span class="badge bg-secondary"><i class="bi bi-speedometer2 me-1"></i>${month.weight} kg</span>` : ''}
+                    ${month.gymVisits ? `<span class="badge bg-info"><i class="bi bi-calendar-check me-1"></i>${month.gymVisits} visits</span>` : ''}
                 </div>
             </div>
         </div>
@@ -685,12 +636,10 @@ function createAddMonthCard() {
     addMonthCol.className = 'months-col';
 
     addMonthCol.innerHTML = `
-        <div class="card h-100 shadow-sm border-dashed" style="border: 2px dashed #dee2e6; cursor: pointer;">
-            <div class="card-body d-flex flex-column justify-content-center align-items-center text-center p-5">
-                <i class="bi bi-plus-circle" style="font-size: 3rem; color: #6c757d; margin-bottom: 1rem;"></i>
-                <h5 class="text-muted mb-2">Add New Month</h5>
-                <p class="text-muted small mb-0">Track your progress for a new month</p>
-            </div>
+        <div class="card h-100 month-card month-card-add" role="button" tabindex="0">
+            <i class="bi bi-plus-lg"></i>
+            <h6 class="mb-1">Add new month</h6>
+            <p class="small mb-0">Track your progress</p>
         </div>
     `;
 
@@ -712,12 +661,17 @@ function createAddMonthCard() {
 
 function setupMonthCardEvents(monthCol, month) {
     // View month
-    const viewButtons = monthCol.querySelectorAll('.view-month');
-    viewButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
+    const card = monthCol.querySelector('.view-month');
+    card.addEventListener('click', (e) => {
+        if (e.target.closest('.month-card-actions')) return;
+        e.preventDefault();
+        openViewMonthModal(month);
+    });
+    card.addEventListener('keydown', (e) => {
+        if (e.target === card && (e.key === 'Enter' || e.key === ' ')) {
             e.preventDefault();
             openViewMonthModal(month);
-        });
+        }
     });
 
     // Edit month
@@ -725,6 +679,7 @@ function setupMonthCardEvents(monthCol, month) {
     if (editButton) {
         editButton.addEventListener('click', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             openEditMonthModal(month);
         });
     }
@@ -734,6 +689,7 @@ function setupMonthCardEvents(monthCol, month) {
     if (deleteButton) {
         deleteButton.addEventListener('click', async (e) => {
             e.preventDefault();
+            e.stopPropagation();
             await handleDeleteMonth(month.id, month.month, month.year);
         });
     }

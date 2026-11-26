@@ -135,17 +135,167 @@ span:not(.skeleton) {
 
 /* Month Card Styles */
 
-/* Responsive fixed-width month cards */
+/* Month cards: image-first, whole card clickable */
 .month-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border: none;
-    overflow: hidden;
-    width: 100%;
-    min-width: 250px;
-    max-width: 350px;
-    /* Prevent individual cards from getting too wide */
+    position: relative;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.month-card:hover,
+.month-card:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+.month-card-media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    background: var(--bs-secondary-bg);
+    overflow: hidden;
+}
+
+.month-card-media > img,
+.month-card-media > .image-skeleton {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.month-card-media > img {
+    display: none;
+    transition: transform 0.4s ease;
+}
+
+.month-card:hover .month-card-media > img {
+    transform: scale(1.04);
+}
+
+.month-card-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 2.5rem 0.9rem 0.8rem;
+    color: #fff;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0));
+    pointer-events: none;
+}
+
+.month-card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.month-card-title span {
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.month-card-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+
+.month-card-chip {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+}
+
+.month-card-actions {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.6rem;
+    z-index: 2;
+    display: flex;
+    gap: 0.4rem;
+}
+
+.month-card-actions button {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.month-card-actions button:hover {
+    background: var(--bs-primary);
+    transform: scale(1.08);
+}
+
+.month-card-actions .delete-month:hover {
+    background: var(--bs-danger);
+}
+
+@media (hover: hover) {
+    .month-card-actions {
+        opacity: 0;
+        transition: opacity 0.15s ease;
+    }
+
+    .month-card:hover .month-card-actions,
+    .month-card:focus-within .month-card-actions {
+        opacity: 1;
+    }
+}
+
+.month-card-body {
+    padding: 0.8rem 0.9rem;
+}
+
+.month-card-desc {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--bs-secondary-color);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.month-card-add {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 220px;
+    padding: 2rem 1rem;
+    background: transparent;
+    border: 2px dashed var(--bs-border-color);
+    color: var(--bs-secondary-color);
+}
+
+.month-card-add i {
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.month-card-add:hover {
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+    box-shadow: none;
 }
 
 .month-post-image {
@@ -162,54 +312,31 @@ span:not(.skeleton) {
     padding: 1rem;
 }
 
-.month-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-/* Ensure row uses flex and wraps, with gap */
+/* Responsive grid */
 .months-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1.25rem;
 }
 
-/* Fixed width columns for consistent card sizing */
 .months-col {
-    flex: 0 0 280px;
-    /* Fixed width - no grow or shrink */
-    width: 280px;
     display: flex;
-    margin-bottom: 1.5rem;
+    min-width: 0;
 }
 
-@media (max-width: 767.98px) {
+@media (max-width: 575.98px) {
     .months-row {
-        justify-content: center;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
     }
 
-    /* A single fixed 280px card left-aligned looked off-center with
-       empty space only on one side - go full width instead */
-    .months-col {
-        flex: 0 0 100%;
-        width: 100%;
-        max-width: 400px;
+    .month-card-media {
+        aspect-ratio: 1 / 1.1;
     }
-}
 
-.month-card .card-header {
-    border-bottom: none;
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-}
-
-.month-card .card-img-top {
-    transition: transform 0.3s ease;
-    border-radius: 0;
-}
-
-.month-card .card-footer {
-    border-top: 1px solid rgba(0, 0, 0, 0.125);
+    .month-card-title {
+        font-size: 1rem;
+    }
 }
 
 /* Horizontal scrolling for months */
