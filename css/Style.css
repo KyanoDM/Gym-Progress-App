@@ -2329,3 +2329,80 @@ body:not(.modal-open) .modal-backdrop {
 .dash-hero-simple .dash-subtitle {
     font-size: 0.9rem;
 }
+
+/* ==========================================================================
+   Months page: match the dashboard look (violet accent, surface cards)
+   ========================================================================== */
+.dash, .modal {
+    --bs-primary: #8b5cf6;
+    --bs-primary-rgb: 139, 92, 246;
+    --bs-link-color: #8b5cf6;
+    --bs-link-hover-color: #7c3aed;
+}
+
+.dash .btn-primary, .modal .btn-primary {
+    --bs-btn-bg: #8b5cf6;
+    --bs-btn-border-color: #8b5cf6;
+    --bs-btn-hover-bg: #7c3aed;
+    --bs-btn-hover-border-color: #7c3aed;
+    --bs-btn-active-bg: #6d28d9;
+    --bs-btn-active-border-color: #6d28d9;
+    --bs-btn-disabled-bg: #8b5cf6;
+    --bs-btn-disabled-border-color: #8b5cf6;
+}
+
+.modal .modal-header.bg-primary {
+    background: #8b5cf6 !important;
+}
+
+.modal .text-primary { color: #8b5cf6 !important; }
+
+.dash .month-card {
+    background: var(--bg-surface);
+    border-color: var(--border);
+}
+
+.dash .month-card:hover,
+.dash .month-card:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.dash .month-card-actions button:hover { background: var(--accent); }
+
+.dash .month-card-add:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Year filter */
+#yearFilterContainer,
+[data-bs-theme="dark"] #yearFilterContainer {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+#yearFilterContainer .btn-group,
+[data-bs-theme="dark"] #yearFilterContainer .btn-group {
+    background: var(--bg-muted);
+    box-shadow: none;
+    border: 1px solid var(--border);
+}
+
+#yearFilterContainer .btn-group::before,
+[data-bs-theme="dark"] #yearFilterContainer .btn-group::before {
+    background: var(--accent);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.35);
+}
+
+#yearFilterContainer .btn-check:checked+.btn-sm,
+[data-bs-theme="dark"] #yearFilterContainer .btn-check:checked+.btn-sm {
+    color: #fff;
+    text-shadow: none;
+}
+
+#yearFilterContainer .form-check-input:checked,
+#standalone-details-toggle .form-check-input:checked,
+[data-bs-theme="dark"] #yearFilterContainer .form-check-input:checked,
+[data-bs-theme="dark"] #standalone-details-toggle .form-check-input:checked {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
