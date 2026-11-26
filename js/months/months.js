@@ -205,12 +205,6 @@ async function loadUserMonths(userId) {
         // Set up year filter buttons
         setupYearFilterButtons(months);
 
-        // Only show skeleton cards if we have months to load (avoids flash when empty)
-        if (months.length > 0) {
-            // Show skeleton loading cards
-            showSkeletonCards(monthsContainer);
-        }
-
         // Display months based on current filter
         displayFilteredMonths();
 
@@ -220,9 +214,6 @@ async function loadUserMonths(userId) {
         // Sync months count in database (in case there's a mismatch)
         // Fire and forget: not needed for rendering
         syncMonthsCount(userId, months.length);
-
-        // Set up toggle functionality after cards are created
-        setupDetailsToggle();
 
     } catch (error) {
         const monthsContainer = document.querySelector('.months-row');
@@ -241,34 +232,6 @@ async function loadUserMonths(userId) {
     }
 }
 
-function showSkeletonCards(container) {
-    // Clear any existing content
-    container.innerHTML = '';
-
-    // Create 3 skeleton cards to simulate loading
-    for (let i = 0; i < 3; i++) {
-        const skeletonCard = createSkeletonCard();
-        container.appendChild(skeletonCard);
-    }
-}
-
-function createSkeletonCard() {
-    const monthCol = document.createElement('div');
-    monthCol.className = 'months-col skeleton-card';
-
-    monthCol.innerHTML = `
-        <div class="card h-100 month-card">
-            <div class="month-card-media"><div class="skeleton image-skeleton"></div></div>
-            <div class="month-card-body">
-                <div class="skeleton skeleton-text mb-2" style="width: 100%; height: 14px;"></div>
-                <div class="skeleton skeleton-text" style="width: 70%; height: 14px;"></div>
-            </div>
-        </div>
-    `;
-
-    return monthCol;
-}
-
 // Year filtering functions
 function setupYearFilterButtons(months) {
     const yearFilterContainer = document.getElementById('yearFilterContainer');
@@ -276,7 +239,6 @@ function setupYearFilterButtons(months) {
         if (yearFilterContainer) {
             yearFilterContainer.style.display = 'none';
             // Still show the toggle even if no year filter
-            showDetailsToggleAlone();
         }
         return;
     }
@@ -287,7 +249,6 @@ function setupYearFilterButtons(months) {
     // Only show year filter if there are multiple years
     if (years.length <= 1) {
         yearFilterContainer.style.display = 'none';
-        showDetailsToggleAlone();
         return;
     }
 
@@ -339,20 +300,6 @@ function setupYearFilterButtons(months) {
 
     // Initialize sliding indicator after buttons are added
     initializeSlidingIndicator();
-}
-
-function showDetailsToggleAlone() {
-    // Clean up any existing standalone toggle first
-    cleanupStandaloneToggle();
-
-    // Get the saved preference
-    const savedPreference = localStorage.getItem('showMonthDetails');
-    const showDetails = savedPreference === 'true';
-
-    // Show the toggle outside the year filter when year filter is hidden
-    const mainContainer = document.querySelector('.container-fluid.mt-4.px-4.pb-4');
-
-
 }
 
 function cleanupStandaloneToggle() {
@@ -457,9 +404,6 @@ function displayFilteredMonths() {
         `;
         monthsContainer.appendChild(noMonthsMessage);
     }
-
-    // Apply details toggle state after cards are created
-    applyDetailsToggleState();
 }
 
 function createMonthCard(month) {
@@ -491,9 +435,6 @@ function createMonthCard(month) {
     const rating = month.rating || 5;
     const ratingBadgeClass = getRatingBadgeClass(rating);
 
-    // Always start with details hidden - they'll be shown by setupDetailsToggle if needed
-    const detailsDisplay = 'none';
-
     const imageCount = month.imageUrls ? (month.imageUrls.length || Object.keys(month.imageUrls).length) : 0;
     monthCol.innerHTML = `
         <div class="card h-100 month-card view-month" role="button" tabindex="0" data-month-id="${month.id}">
@@ -516,10 +457,10 @@ function createMonthCard(month) {
             </div>
             <div class="month-card-body">
                 <p class="month-card-desc">${month.description || 'No description available.'}</p>
-                <div class="d-flex flex-wrap gap-2 mt-2 month-details d-none">
-                    ${month.weight ? `<span class="badge bg-secondary"><i class="bi bi-speedometer2 me-1"></i>${month.weight} kg</span>` : ''}
-                    ${month.gymVisits ? `<span class="badge bg-info"><i class="bi bi-calendar-check me-1"></i>${month.gymVisits} visits</span>` : ''}
-                </div>
+                ${(month.weight || month.gymVisits) ? `<div class="month-card-stats">
+                    ${month.weight ? `<span><i class="bi bi-speedometer2"></i>${month.weight} kg</span>` : ''}
+                    ${month.gymVisits ? `<span><i class="bi bi-calendar-check"></i>${month.gymVisits} visits</span>` : ''}
+                </div>` : ''}
             </div>
         </div>
     `;
@@ -536,7 +477,7 @@ function handleImageLoad(img) {
     if (skeleton) {
         skeleton.style.display = 'none';
     }
-    img.style.display = 'block';
+    img.classList.add('loaded');
 }
 
 // Make handleImageLoad globally accessible
@@ -1548,60 +1489,6 @@ async function handleDeleteMonth(monthId, monthName, year) {
     } catch (error) {
         showToast("Error deleting month. Please try again.", 'error');
     }
-}
-
-function setupDetailsToggle() {
-    // Check for both regular toggle (inside year filter) and standalone toggle
-    const toggle = document.getElementById('showDetailsToggle');
-    const standaloneToggle = document.getElementById('showDetailsToggleStandalone');
-
-    const activeToggle = toggle || standaloneToggle;
-
-    if (!activeToggle) return;
-
-    // Restore user's preference from localStorage
-    const savedPreference = localStorage.getItem('showMonthDetails');
-    const showDetails = savedPreference === 'true';
-
-    // Set toggle state
-    activeToggle.checked = showDetails;
-
-    // Apply the current state to existing month details
-    applyDetailsToggleState();
-
-    // Add event listener to the active toggle (remove any existing listeners first)
-    const newToggle = activeToggle.cloneNode(true);
-    activeToggle.parentNode.replaceChild(newToggle, activeToggle);
-
-    newToggle.addEventListener('change', (e) => {
-        const showDetails = e.target.checked;
-
-        // Apply to all month details
-        applyDetailsToggleState();
-
-        // Store preference in localStorage
-        localStorage.setItem('showMonthDetails', showDetails.toString());
-    });
-}
-
-function applyDetailsToggleState() {
-    // Get the current toggle state
-    const toggle = document.getElementById('showDetailsToggle');
-    const standaloneToggle = document.getElementById('showDetailsToggleStandalone');
-    const activeToggle = toggle || standaloneToggle;
-
-    if (!activeToggle) return;
-
-    const showDetails = activeToggle.checked;
-    const monthDetails = document.querySelectorAll('.month-details');
-
-    monthDetails.forEach(detail => {
-        if (showDetails) {
-            detail.classList.remove("d-none");
-        } else {
-            detail.classList.add("d-none");
-        }
-    });
 }
 
 function setupAddMonthButton() {

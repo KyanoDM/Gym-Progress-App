@@ -96,40 +96,14 @@ async function loadDashboardData(userId) {
 }
 
 function updateWelcomeMessage() {
-    const now = new Date();
-    const hour = now.getHours();
     const userName = document.getElementById('user-name');
-    const welcomeMessage = document.getElementById('welcome-message');
-
-    if (!userName || !welcomeMessage) {
-        console.warn('Welcome message elements not found');
-        return;
-    }
-
-    let greeting = "Good evening";
-    let iconClass = "bi-moon-stars";
-
-    if (hour < 12) {
-        greeting = "Good morning";
-        iconClass = "bi-sun";
-    } else if (hour < 17) {
-        greeting = "Good afternoon";
-        iconClass = "bi-sun";
-    }
-
-    // Get user name from auth or use placeholder
+    if (!userName) return;
+    // The greeting itself is set inline in the HTML before first paint; only fill in the name here
     const user = auth.currentUser;
-    let displayName = 'User';
-
-    if (user) {
-        displayName = user.displayName || user.email?.split('@')[0] || 'User';
-        userName.classList.remove('skeleton', 'skeleton-text');
-        userName.style.width = 'auto';
-        userName.style.height = 'auto';
-    }
-
-    // Update the welcome message with the new content
-    welcomeMessage.innerHTML = `<i class="bi ${iconClass} me-2 text-warning"></i>${greeting}, <span id="user-name">${displayName}</span>!`;
+    userName.textContent = (user && (user.displayName || user.email?.split('@')[0])) || 'User';
+    userName.classList.remove('skeleton', 'skeleton-text');
+    userName.style.width = '';
+    userName.style.height = '';
 }
 
 function updateStats(months) {
