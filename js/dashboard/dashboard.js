@@ -266,7 +266,8 @@ function renderChart(months) {
 
     const monthOrder = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
     const recent = months.slice(0, 12).reverse();
-    skeleton.style.display = 'none';
+    skeleton.classList.add('is-hidden');
+    ctx.classList.add('ready');
     if (weightChart) weightChart.destroy();
 
     const panelBody = ctx.parentElement;

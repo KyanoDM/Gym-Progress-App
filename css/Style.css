@@ -2489,3 +2489,58 @@ body:not(.modal-open) .modal-backdrop {
 .month-card-desc { min-height: 2.625rem; line-height: 1.5; }
 .dash-greeting { min-height: 2.1rem; }
 .stat-trend { min-height: 1.3rem; }
+
+/* Chart: skeleton and canvas share the same box, then cross-fade */
+.chart-box > canvas {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.chart-box > canvas.ready { opacity: 1; }
+
+#chart-skeleton {
+    position: absolute !important;
+    inset: 0;
+    transition: opacity 0.3s ease;
+}
+
+#chart-skeleton.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Sidebar profile card: fixed sizes so it never jumps while loading */
+#sidebar-avatar-wrapper {
+    display: block !important;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 0.5rem;
+}
+
+#sidebar-avatar-wrapper #sidebar-user-avatar {
+    display: block;
+    margin: 0 !important;
+}
+
+#sidebar-months-wrapper {
+    height: auto !important;
+    min-width: 1.3em;
+    min-height: 0.9em;
+    vertical-align: baseline;
+}
+
+.dash-greeting { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.dash-hero > div:first-child { min-width: 0; }
+.stat-trend, .stat-foot, .stat-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-hero > div:first-child { max-width: 100%; }
+@media (min-width: 576px) {
+    .dash-hero { flex-wrap: nowrap; }
+    .dash-hero > div:first-child { flex: 1 1 0; }
+    .dash-hero .dash-actions { flex: 0 0 auto; }
+}
+.dash-greeting { line-height: 1.25; height: 2.2rem; min-height: 0; }
+.dash-greeting #user-name.skeleton { height: 1.4rem !important; vertical-align: middle; }

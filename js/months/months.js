@@ -216,8 +216,11 @@ async function loadUserMonths(userId) {
         // Set up year filter buttons
         setupYearFilterButtons(months);
 
+        finalizeYearFilter();
+
         // Display months based on current filter
         displayFilteredMonths();
+        localStorage.setItem('monthsShown', String(document.querySelectorAll('.months-row .month-card').length || 6));
 
         // Update sidebar months count
         updateSidebarMonthsCount(months.length);
@@ -313,6 +316,16 @@ function setupYearFilterButtons(months) {
     initializeSlidingIndicator();
 }
 
+function finalizeYearFilter() {
+    document.getElementById('yearFilterSkeleton')?.remove();
+    const c = document.getElementById('yearFilterContainer');
+    if (c && c.style.display !== 'none') {
+        requestAnimationFrame(() => localStorage.setItem('yearFilterWidth', String(Math.round(c.getBoundingClientRect().width))));
+    } else {
+        localStorage.removeItem('yearFilterWidth');
+    }
+}
+
 function cleanupStandaloneToggle() {
     const existingStandalone = document.getElementById('standalone-details-toggle');
     if (existingStandalone) {
@@ -385,10 +398,6 @@ function displayFilteredMonths() {
     // Clear current content
     monthsContainer.innerHTML = '';
 
-    // Always show the "Add Month" card first
-    const addMonthCard = createAddMonthCard();
-    addMonthCard.style.setProperty('--i', 0);
-    monthsContainer.appendChild(addMonthCard);
 
     // Filter months based on selected year
     let filteredMonths = allMonths;
@@ -399,20 +408,20 @@ function displayFilteredMonths() {
     // Display filtered months
     filteredMonths.forEach((month, index) => {
         const monthCard = createMonthCard(month);
-        monthCard.style.setProperty('--i', index + 1);
+        monthCard.style.setProperty('--i', index);
         monthsContainer.appendChild(monthCard);
         setupMonthCardEvents(monthCard, month);
     });
 
     // If no months match the filter, show a message (but keep the Add Month card)
-    if (filteredMonths.length === 0 && currentSelectedYear !== 'all') {
+    if (filteredMonths.length === 0) {
         const noMonthsMessage = document.createElement('div');
         noMonthsMessage.className = 'months-col';
         noMonthsMessage.innerHTML = `
             <div class="col-12 text-center p-5">
                 <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
-                <h5 class="mt-3 text-muted">No months found for ${currentSelectedYear}</h5>
-                <p class="text-muted">Try selecting a different year or add a new month for this year.</p>
+                <h5 class="mt-3 text-muted">No months yet</h5>
+                <p class="text-muted">Use "Add month" to track your first one.</p>
             </div>
         `;
         monthsContainer.appendChild(noMonthsMessage);
@@ -584,32 +593,14 @@ async function updateTotalVisits(userId, visitsDelta) {
     }
 }
 
-function createAddMonthCard() {
-    const addMonthCol = document.createElement('div');
-    addMonthCol.className = 'months-col';
-
-    addMonthCol.innerHTML = `
-        <div class="card h-100 month-card month-card-add" role="button" tabindex="0">
-            <i class="bi bi-plus-lg"></i>
-            <h6 class="mb-1">Add new month</h6>
-            <p class="small mb-0">Track your progress</p>
-        </div>
-    `;
-
-    // Add click event to open modal
-    addMonthCol.addEventListener('click', () => {
-        const modal = new bootstrap.Modal(document.getElementById('addMonthModal'));
-
-        // Reset form when modal is fully shown
-        const modalElement = document.getElementById('addMonthModal');
-        modalElement.addEventListener('shown.bs.modal', function () {
-            resetAddMonthForm();
-        }, { once: true }); // Use once: true so the event listener is removed after first use
-
-        modal.show();
-    });
-
-    return addMonthCol;
+function openAddMonthModal() {
+    const modalElement = document.getElementById('addMonthModal');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    // Reset the form once the modal is fully shown
+    modalElement.addEventListener('shown.bs.modal', function () {
+        resetAddMonthForm();
+    }, { once: true });
+    modal.show();
 }
 
 function setupMonthCardEvents(monthCol, month) {
@@ -1505,6 +1496,8 @@ async function handleDeleteMonth(monthId, monthName, year) {
 }
 
 function setupAddMonthButton() {
+    document.getElementById('hero-add-month')?.addEventListener('click', openAddMonthModal);
+
     const addButton = document.querySelector('.btn-primary');
     if (addButton && addButton.textContent.includes('Add New Month')) {
         addButton.addEventListener('click', () => {
