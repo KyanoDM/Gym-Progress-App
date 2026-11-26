@@ -2715,3 +2715,35 @@ body:not(.modal-open) .modal-backdrop {
 @media (min-width: 700px)  { .months-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; } }
 @media (min-width: 1100px) { .months-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem; } }
 @media (min-width: 1500px) { .months-row { grid-template-columns: repeat(6, minmax(0, 1fr)); } .month-card-title { font-size: 1.05rem; } }
+
+/* Compact month popup: photos in one swipeable row instead of a tall grid */
+.view-gallery {
+    display: flex;
+    gap: 0.6rem;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: 0.4rem;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+.view-gallery > * {
+    flex: 0 0 auto;
+    width: auto;
+    height: min(58vh, 540px);
+    scroll-snap-align: start;
+}
+.view-gallery .gallery-image { height: 100%; }
+.view-gallery .gallery-image img { height: 100%; width: auto; max-width: none; display: block; }
+.view-gallery .gallery-image > .skeleton { height: 100% !important; width: auto !important; aspect-ratio: 3 / 4; }
+.view-gallery .gallery-image.skeleton-image { aspect-ratio: 3 / 4; }
+#viewMonthModal #videoContainer video,
+#viewMonthModal #videoContainer iframe { max-height: 45vh; }
+.vm-body { padding: 1.1rem 1.25rem; }
+.vm-grid { gap: 1.25rem; }
+.vm-media { gap: 1rem; }
+.vm-side { gap: 0.8rem; }
+.vm-block { padding: 0.8rem 0.95rem; }
+@media (max-width: 575.98px) {
+    .view-gallery { grid-template-columns: none; }
+    .view-gallery > * { height: min(55vh, 460px); }
+}
