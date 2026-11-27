@@ -360,21 +360,21 @@ function updateSlidingIndicator(selectedValue) {
     const activeLabel = buttonGroup.querySelector(`label[for="${activeInput.id}"]`);
     if (!activeLabel) return;
 
-    // Calculate position and width
-    const buttonGroupRect = buttonGroup.getBoundingClientRect();
-    const activeLabelRect = activeLabel.getBoundingClientRect();
+    // offsetLeft/offsetWidth are in the scroll container's own coordinates,
+    // so the highlight stays on the right year even when the group is scrolled
+    buttonGroup.style.setProperty('--slider-width', activeLabel.offsetWidth + 'px');
+    buttonGroup.style.setProperty('--slider-left', activeLabel.offsetLeft + 'px');
 
-    const relativeLeft = activeLabelRect.left - buttonGroupRect.left;
-    const width = activeLabelRect.width;
-
-    // Update CSS custom properties
-    buttonGroup.style.setProperty('--slider-width', `${width}px`);
-    buttonGroup.style.setProperty('--slider-left', `${relativeLeft}px`);
+    // Keep the selected year in view on narrow screens
+    const target = activeLabel.offsetLeft - (buttonGroup.clientWidth - activeLabel.offsetWidth) / 2;
+    buttonGroup.scrollTo({ left: Math.max(0, target), behavior: 'smooth' });
 }
 
 function setupYearFilter() {
     const yearFilterContainer = document.getElementById('yearFilterContainer');
     if (!yearFilterContainer) return;
+
+    window.addEventListener('resize', () => updateSlidingIndicator(currentSelectedYear));
 
     // Add event listener for year filter changes
     yearFilterContainer.addEventListener('change', (e) => {

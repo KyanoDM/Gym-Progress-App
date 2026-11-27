@@ -2747,3 +2747,16 @@ body:not(.modal-open) .modal-backdrop {
     .view-gallery { grid-template-columns: none; }
     .view-gallery > * { height: min(55vh, 460px); }
 }
+
+/* Year filter: identical label widths for every state so the highlight can't drift */
+#yearFilterContainer .btn-group .btn-sm { font-weight: 600; transition: color 0.2s ease; }
+#yearFilterContainer .btn-sm:hover:not(.active) { transform: none; }
+
+/* Mobile month popup: photos fill the full width of the popup */
+@media (max-width: 575.98px) {
+    .view-gallery > * { flex: 0 0 100%; width: 100%; height: auto; scroll-snap-align: start; scroll-snap-stop: always; }
+    .view-gallery .gallery-image { height: auto; }
+    .view-gallery .gallery-image img { width: 100%; height: auto; }
+    .view-gallery .gallery-image > .skeleton { width: 100% !important; height: auto !important; aspect-ratio: 3 / 4; }
+    #viewMonthModal .modal-body, #viewMonthModal .vm-body, .vm-media, #imagesSection { min-width: 0; max-width: 100%; }
+}
